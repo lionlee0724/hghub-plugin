@@ -1,0 +1,363 @@
+{
+  "name": "HGhub 插件集（lionlee0724 维护）",
+  "description": "由 3 个上游订阅合并维护的 HPP 1.0 单文件源集合，含本地修复。",
+  "plugins": [
+    {
+      "id": "4kav",
+      "name": "4k-av",
+      "version": "1.0.1",
+      "description": "4kmp 影视源：首页、分类、搜索、详情与直链播放。",
+      "url": "plugins/4kav.js"
+    },
+    {
+      "id": "anfuns",
+      "name": "anfuns",
+      "version": "1.0.1",
+      "description": "anfuns 动漫源：分类、搜索、多线路详情与播放解析。",
+      "url": "plugins/anfuns.js"
+    },
+    {
+      "id": "aowu",
+      "name": "嗷呜动漫",
+      "version": "1.0.1",
+      "description": "嗷呜动漫：DS 列表接口、详情多线路与 AES 播放解析。",
+      "url": "plugins/aowu.js"
+    },
+    {
+      "id": "apple",
+      "name": "小苹果",
+      "version": "1.0.1",
+      "description": "小苹果影视 App 接口：分类、搜索、详情与 HLS 播放。上游为 HTTP。",
+      "url": "plugins/apple.js"
+    },
+    {
+      "id": "appmovie.source",
+      "name": "APP影院",
+      "version": "1.0.2",
+      "description": "APP影院（appmovie.art）：首页四个热映分区、八个频道分页、搜索、详情与多线路 m3u8 直连。",
+      "url": "plugins/appmovie.source.js"
+    },
+    {
+      "id": "auete.source",
+      "name": "Auete影视",
+      "version": "1.0.0",
+      "description": "Auete影视网（aeete.com）：首页五组热映/最新分区、五个频道与子频道分页、详情多线路；播放页把 m3u8 以 base64 内联，插件内解码。站内搜索需图形验证码，未提供搜索。",
+      "url": "plugins/auete.source.js"
+    },
+    {
+      "id": "av321.source",
+      "name": "321AV",
+      "version": "1.0.0",
+      "description": "321AV 站点数据源：首页分区、分类、搜索、详情与 HLS 直连。",
+      "url": "plugins/av321.source.js"
+    },
+    {
+      "id": "av591.source",
+      "name": "591AV",
+      "version": "1.0.0",
+      "description": "591AV / PPP.Porn（591av.ws）：首页五个分区、三十三个分类的 from 翻页、搜索、详情与 HLS 直链；取流带 Referer，并按地址里的时间戳声明有效期。",
+      "url": "plugins/av591.source.js"
+    },
+    {
+      "id": "avtoday",
+      "name": "avtoday",
+      "version": "1.0.1",
+      "description": "avtoday：分类、搜索、详情与 HLS 播放。",
+      "url": "plugins/avtoday.js"
+    },
+    {
+      "id": "bfzy.source",
+      "name": "暴风资源",
+      "version": "1.0.4",
+      "description": "暴风资源采集接口单文件数据源：搜索、分类、详情与 m3u8 直连播放。",
+      "url": "plugins/bfzy.source.js"
+    },
+    {
+      "id": "cg91.source",
+      "name": "91吃瓜",
+      "version": "1.0.2",
+      "description": "91吃瓜网（91cg1.com）：二十五分类分页、搜索、详情多段视频；正文封面是 AES-128-CBC 密文，交给宿主原生 transform 解密；播放走 DPlayer 配置里的 HLS 直链。",
+      "url": "plugins/cg91.source.js"
+    },
+    {
+      "id": "chengguo.source",
+      "name": "橙果短剧",
+      "version": "1.0.2",
+      "description": "橙果短剧（chengguodj.com）：首页分区、五个频道分页、搜索、详情与 HLS 直连；接口走 AES+签名，插件内自解。",
+      "url": "plugins/chengguo.source.js"
+    },
+    {
+      "id": "ck69.source",
+      "name": "黄色仓库",
+      "version": "1.0.0",
+      "description": "黄色仓库（69ck1）数据源：首页分区、五个分类、搜索、详情与 m3u8 直连。",
+      "url": "plugins/ck69.source.js"
+    },
+    {
+      "id": "dbku.source",
+      "name": "独播库",
+      "version": "1.0.1",
+      "description": "独播库（dbku.tv）：macCMS myui 站，首页八个分区、八个频道（地区/年代/类型/语言/排序筛选）、搜索、详情与 HLS 直连。播放页 player_data 的 Base64 + URL 编码自行还原，取流无鉴权、无时效签名。",
+      "url": "plugins/dbku.source.js"
+    },
+    {
+      "id": "dhvideo.source",
+      "name": "豆花电影网",
+      "version": "1.0.0",
+      "description": "豆花电影网（dhvideo.cc）：五个频道分页、搜索、多线路详情；播放走 /api/m3u8 跳转到 HLS，遇 sha1 工作量校验时插件内自行求解。",
+      "url": "plugins/dhvideo.source.js"
+    },
+    {
+      "id": "duanjutt",
+      "name": "短剧天堂",
+      "version": "1.0.1",
+      "description": "短剧天堂：分类、详情与播放。搜索页有验证码，当前不提供搜索。",
+      "url": "plugins/duanjutt.js"
+    },
+    {
+      "id": "hanime",
+      "name": "Hanime1",
+      "version": "1.0.1",
+      "description": "Hanime1：分类、搜索、详情与直链播放。",
+      "url": "plugins/hanime.js"
+    },
+    {
+      "id": "hanime16.source",
+      "name": "H動漫 hanime16",
+      "version": "1.0.1",
+      "description": "hanime16 数据源：首页分区、类型与排序、搜索、详情，直连 1080P/720P/480P。",
+      "url": "plugins/hanime16.source.js"
+    },
+    {
+      "id": "hdmoli",
+      "name": "hdmoli",
+      "version": "1.0.1",
+      "description": "hdmoli：电影、剧集、动画分类、搜索、详情与播放解析。",
+      "url": "plugins/hdmoli.js"
+    },
+    {
+      "id": "heiliao.source",
+      "name": "黑料网",
+      "version": "1.0.3",
+      "description": "黑料网（heiliao.com）：首页最新、三十余个吃瓜分区、关键词搜索、详情与多线路 HLS 短剧。视频地址由服务端渲染进详情页的播放器配置，带 auth_key 直连，key 也是绝对地址。",
+      "url": "plugins/heiliao.source.js"
+    },
+    {
+      "id": "hhkan.source",
+      "name": "好好看",
+      "version": "1.0.3",
+      "description": "好好看（hhkan1.com）：首页分区、五个频道、关键词搜索、详情与多线路 HLS。站点用 cdndefend 的 JS 挑战挡爬虫，插件里把那道 SHA1 工作量证明直接算出来拿 cookie，全程不需要浏览器。",
+      "url": "plugins/hhkan.source.js"
+    },
+    {
+      "id": "hjkk",
+      "name": "韩剧看看",
+      "version": "1.0.1",
+      "description": "韩剧看看：韩剧、韩影、韩综分类、搜索、详情与播放解析。",
+      "url": "plugins/hjkk.js"
+    },
+    {
+      "id": "hkdoll",
+      "name": "玩偶姐姐",
+      "version": "1.0.1",
+      "description": "玩偶姐姐：分类、搜索、详情与 XOR 解密播放。",
+      "url": "plugins/hkdoll.js"
+    },
+    {
+      "id": "hl365.source",
+      "name": "黑料不打烊",
+      "version": "1.0.1",
+      "description": "黑料不打烊（hl365.com）：Typecho + Mirages 主题，首页最新流、二十个吃瓜分区、关键词搜索、详情与分集 HLS。播放地址由服务端渲染进播放器 data-config，带 auth_key 直连，key 与切片都是绝对地址。",
+      "url": "plugins/hl365.source.js"
+    },
+    {
+      "id": "hlws.source",
+      "name": "51黑料",
+      "version": "1.0.0",
+      "description": "51黑料网（51hlws.com）：首页分区、十四分类分页、搜索、详情与 HLS 直连；封面自动切到明文图源。",
+      "url": "plugins/hlws.source.js"
+    },
+    {
+      "id": "huangguo",
+      "name": "黄果短剧",
+      "version": "1.1.0",
+      "description": "黄果短剧（huangguoai.com）：首页、分类、榜单、搜索、详情、HLS 播放与图文。封面走站点公开的 AES-CBC 图床协议。",
+      "url": "plugins/huangguo.js"
+    },
+    {
+      "id": "huangguo.source",
+      "name": "黄果短剧",
+      "version": "1.0.1",
+      "description": "黄果短剧（huangguoai.com）：首页分区、分类与榜单、搜索、详情、HLS 播放与图文。封面走站点 AES-CBC 图床协议并剥掉会过期的 auth_key；取流按签名真实到期时间声明 expiresAt；空分类自动隐藏。",
+      "url": "plugins/huangguo.source.js"
+    },
+    {
+      "id": "jdys",
+      "name": "绝对影视",
+      "version": "1.0.1",
+      "description": "绝对影视：分类、搜索、详情与 AES 播放解析。",
+      "url": "plugins/jdys.js"
+    },
+    {
+      "id": "jisu.source",
+      "name": "极速追剧",
+      "version": "1.0.1",
+      "description": "极速追剧（jisuzhuiju.com）：首页五个分区、五个频道分页、搜索、详情与多线路 HLS 直连。",
+      "url": "plugins/jisu.source.js"
+    },
+    {
+      "id": "jpyy",
+      "name": "金牌影视",
+      "version": "1.0.1",
+      "description": "金牌影视匿名接口：分类、搜索、详情与播放。签名用 MD5+SHA1。",
+      "url": "plugins/jpyy.js"
+    },
+    {
+      "id": "juzong.source",
+      "name": "剧踪影院",
+      "version": "1.0.1",
+      "description": "剧踪影院（juzong01.me）：首页分区、四分类分页、搜索、详情与「剧踪独家」加密线路解析（经 wgart 接口换取直链）。",
+      "url": "plugins/juzong.source.js"
+    },
+    {
+      "id": "kxyy.source",
+      "name": "开心影院",
+      "version": "1.0.0",
+      "description": "开心影院（kxyy1.cc）：四个分类分页、关键词联想搜索、详情与多线路 m3u8 直连；主域异常自动切备用域名。",
+      "url": "plugins/kxyy.source.js"
+    },
+    {
+      "id": "local.cxkjg",
+      "name": "创享影视",
+      "version": "0.1.0",
+      "description": "",
+      "url": "plugins/local.cxkjg.js"
+    },
+    {
+      "id": "local.dapian",
+      "name": "大片网",
+      "version": "0.1.0",
+      "description": "mxpro 模板点播源，两条播放线路，播放地址需 base64 + URL 解码",
+      "url": "plugins/local.dapian.js"
+    },
+    {
+      "id": "local.kanju",
+      "name": "看剧AI",
+      "version": "0.1.2",
+      "description": "看剧AI 的公开片库、搜索、详情和播放；播放使用站点游客会话与正常额度。",
+      "url": "plugins/local.kanju.js"
+    },
+    {
+      "id": "local.kanmovie",
+      "name": "西瓜影视",
+      "version": "0.1.1",
+      "description": "",
+      "url": "plugins/local.kanmovie.js"
+    },
+    {
+      "id": "local.kxyy",
+      "name": "快看影院",
+      "version": "0.1.0",
+      "description": "六条线路的点播源，列表走页面、搜索走 suggest 接口",
+      "url": "plugins/local.kxyy.js"
+    },
+    {
+      "id": "local.pianku",
+      "name": "片库",
+      "version": "0.1.0",
+      "description": "页面解析型点播源，含多条播放线路",
+      "url": "plugins/local.pianku.js"
+    },
+    {
+      "id": "local.ppnix",
+      "name": "PPnix",
+      "version": "0.1.0",
+      "description": "",
+      "url": "plugins/local.ppnix.js"
+    },
+    {
+      "id": "madou",
+      "name": "麻豆社",
+      "version": "1.0.1",
+      "description": "麻豆社：分类、搜索、详情与 HLS 播放。",
+      "url": "plugins/madou.js"
+    },
+    {
+      "id": "netflixgc.source",
+      "name": "奈飞工厂",
+      "version": "1.0.1",
+      "description": "奈飞工厂（netflixgc.com）：首页与分类走站内 ds_api/vod 接口（POST 返回 JSON），搜索走 /vodsearch，播放页 player_aaaa 的 encrypt=2 用 base64+unescape 解开就是 m3u8。",
+      "url": "plugins/netflixgc.source.js"
+    },
+    {
+      "id": "pornhub",
+      "name": "Pornhub",
+      "version": "1.0.1",
+      "description": "Pornhub：分类、搜索、详情与 HLS 播放。",
+      "url": "plugins/pornhub.js"
+    },
+    {
+      "id": "saohuo",
+      "name": "烧火电影",
+      "version": "1.0.1",
+      "description": "烧火电影：分类、搜索、多线路详情与 iframe 解析播放。",
+      "url": "plugins/saohuo.js"
+    },
+    {
+      "id": "tangxin.vlog",
+      "name": "糖心Vlog",
+      "version": "1.0.1",
+      "description": "糖心Vlog 站点数据源：首页分区、演员与标签、全量索引搜索、m3u8 直连播放。",
+      "url": "plugins/tangxin.vlog.js"
+    },
+    {
+      "id": "tiantian",
+      "name": "天天影视",
+      "version": "1.0.1",
+      "description": "天天影视 App 接口：分类、搜索、详情与播放。上游为 HTTP，请求带 MD5 签名。",
+      "url": "plugins/tiantian.js"
+    },
+    {
+      "id": "wwgz",
+      "name": "农民影视",
+      "version": "1.0.1",
+      "description": "农民影视：分类、搜索、多线路详情与 nmvod 播放解析。",
+      "url": "plugins/wwgz.js"
+    },
+    {
+      "id": "xhamster",
+      "name": "xHamster",
+      "version": "1.0.1",
+      "description": "xHamster：分类、搜索、详情与多清晰度播放。",
+      "url": "plugins/xhamster.js"
+    },
+    {
+      "id": "xiaohys",
+      "name": "小红影视",
+      "version": "1.0.1",
+      "description": "小红影视：DS 列表接口、详情多线路与 AES 播放解析。",
+      "url": "plugins/xiaohys.js"
+    },
+    {
+      "id": "xingya",
+      "name": "星芽短剧",
+      "version": "1.0.1",
+      "description": "星芽短剧 App 接口：分类、搜索、详情与直链播放。登录令牌保存在插件存储中。",
+      "url": "plugins/xingya.js"
+    },
+    {
+      "id": "yingxi.source",
+      "name": "影夕视频",
+      "version": "1.0.1",
+      "description": "影夕视频（yingxivod.com）：首页最近更新与四个频道、分类分页（地区/首字母/排序）、搜索、详情与直连播放；电视直播频道不暴露。播放页 player_aaaa 明文给出地址，站内 m3u8proxy 的真实地址自行还原；CDN 见到 Referer 就 403，所以默认头里刻意不带 Referer。",
+      "url": "plugins/yingxi.source.js"
+    },
+    {
+      "id": "zhuiying.source",
+      "name": "追影",
+      "version": "1.0.2",
+      "description": "追影（zhuiying3.cc）：首页九个分区、六个分类、搜索、详情与多线路解析（player_api 的 md5 token 在插件内自算）。",
+      "url": "plugins/zhuiying.source.js"
+    }
+  ]
+}
