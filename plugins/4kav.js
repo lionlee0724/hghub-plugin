@@ -1,20 +1,20 @@
 export const meta = {
   id: '4kav',
   name: '4k-av',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
-  description: '4kmp 影视源：首页、分类、搜索、详情与直链播放。',
+  description: '4k-av 影视源（4kmp.com 已 301 到 4k-av.com）：首页、分类、搜索、详情与直链播放。',
   author: 'community',
   kind: 'source',
-  linkDomains: ['4kmp.com', 'www.4kmp.com'],
+  linkDomains: ['4kmp.com', 'www.4kmp.com', '4k-av.com', 'www.4k-av.com'],
   defaultHeaders: {
-    Referer: 'https://4kmp.com/',
+    Referer: 'https://4k-av.com/',
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
   },
   timeouts: { read: 20, playback: 30 },
 };
 
-const SITE = 'https://4kmp.com';
+const SITE = 'https://4k-av.com';
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1';
 const TABS = [
   { id: 'home', label: '首页', path: '' },
@@ -187,7 +187,7 @@ export default function (hg) {
       async search(params, ctx) {
         const q = params && params.query ? String(params.query).trim() : '';
         if (!q) return { items: [], next: null };
-        const html = await fetchHtml(origin() + '/s?q=' + encodeURIComponent(q), ctx);
+        const html = await fetchHtml(origin() + '/en/s?u=' + encodeURIComponent(q), ctx);
         return { items: parseCards(html), next: null };
       },
     },

@@ -1,9 +1,9 @@
 export const meta = {
   id: 'apple',
   name: '小苹果',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
-  description: '小苹果影视 App 接口：分类、搜索、详情与 HLS 播放。上游为 HTTP。',
+  description: '小苹果影视 App 接口：分类、搜索、详情与 HLS 播放。上游已强制 HTTPS（旧版 http 会 400）。',
   author: 'community',
   kind: 'source',
   allowInsecureHttp: true,
@@ -14,7 +14,7 @@ export const meta = {
   timeouts: { read: 20, playback: 30 },
 };
 
-const SITE = 'http://c.xpgtv.net';
+const SITE = 'https://c.xpgtv.net';
 const UA = 'okhttp/3.12.11';
 const TABS = [
   { id: '1', label: '电影', type: 'movie' },

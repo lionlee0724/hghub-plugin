@@ -1,9 +1,9 @@
 export const meta = {
   id: 'avtoday',
   name: 'avtoday',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
-  description: 'avtoday：分类、搜索、详情与 HLS 播放。',
+  description: 'avtoday：目录、搜索、详情与 HLS 播放。首页改用 /catalog（站点根路径已 404）。',
   author: 'community',
   kind: 'source',
   mature: true,
@@ -115,7 +115,7 @@ export default function (hg) {
 
     home: {
       async getSections(params, ctx) {
-        const html = await fetchHtml(origin() + '/', ctx);
+        const html = await fetchHtml(origin() + '/catalog', ctx);
         return { items: [{ id: 'latest', title: '最新', layout: 'grid', items: parseCards(html) }], next: null };
       },
     },

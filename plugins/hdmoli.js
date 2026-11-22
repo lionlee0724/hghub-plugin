@@ -1,20 +1,20 @@
 export const meta = {
   id: 'hdmoli',
   name: 'hdmoli',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
-  description: 'hdmoli：电影、剧集、动画分类、搜索、详情与播放解析。',
+  description: 'hdmoli：电影、剧集、动画分类、搜索与封面。站点已改版为网盘资源站，无在线分集，播放需自行下载。',
   author: 'community',
   kind: 'source',
-  linkDomains: ['hdmoli.pro', 'v.damoli.pro'],
+  linkDomains: ['hdmoli.pro', 'hdmoli.com', 'www.hdmoli.com', 'v.damoli.pro'],
   defaultHeaders: {
-    Referer: 'https://hdmoli.pro/',
+    Referer: 'https://www.hdmoli.com/',
     'User-Agent': 'Mozilla/5.0 (Linux; Android 11; M2007J3SC Build/RKQ1.200826.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/77.0.3865.120 Mobile Safari/537.36',
   },
   timeouts: { read: 20, playback: 30 },
 };
 
-const SITE = 'https://hdmoli.pro';
+const SITE = 'https://www.hdmoli.com';
 const UA = 'Mozilla/5.0 (Linux; Android 11; M2007J3SC Build/RKQ1.200826.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/77.0.3865.120 Mobile Safari/537.36';
 const TABS = [
   { id: '1', label: '电影', type: 'movie' },
@@ -96,7 +96,9 @@ export default function (hg) {
       const href = a.attr('href');
       const title = a.attr('title') || a.text();
       if (!href || !title) continue;
-      const cover = a.attr('data-original') || a.attr('src');
+      const img = a.first('img') || nodes[i].first('img');
+      const cover = a.attr('data-original') || a.attr('data-src') || a.attr('src')
+        || (img && (img.attr('data-original') || img.attr('data-src') || img.attr('src')));
       const item = { id: pathId(href), title: title.trim(), type: typeHint || 'other' };
       if (cover) item.cover = absUrl(cover);
       items.push(item);
