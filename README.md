@@ -37,3 +37,11 @@ plugins/<插件ID>.js    单文件插件源码，ES 模块，meta.id/version 与
 ## 当前修复记录
 
 见 `FIXES.md`。
+
+## 自建插件
+
+| 插件 | 说明 |
+| --- | --- |
+| `xj8`（香蕉短剧） | `xj8.ai` 官方入口 → `xjai6.com` 等应用域；接口为 `aimedia-api.1ybox.com`。首页热播/榜单、27 个分类、游标分页搜索、详情分集、HLS 播放。播放需游客会话（插件自动注册 `device_id` 并缓存 Bearer 令牌）；金币解锁集返回 `CONTENT_LOCKED`。线路列表从回家页 `assets/home-config.js` 动态读取，6 小时缓存 + 内置兜底线路。 |
+
+明细与排查记录见 `FIXES.md` 第 6 节。

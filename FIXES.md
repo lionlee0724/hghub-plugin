@@ -172,3 +172,56 @@ DOMAIN-SUFFIX,zhuiying3.com,DIRECT
 探测用的是按 HPP 规范自行实现的宿主模拟器（Node 24 + cheerio + undici，走系统代理）：
 对每个插件依次调用 `home` → `catalog` → `search` → `getDetail` → `resolvePlayback`，
 再对封面与播放地址发 `Range: bytes=0-1023` 实际取流。该工具仅本地使用，未随仓库发布。
+
+---
+
+## 6. 新增插件：香蕉短剧（`xj8`）
+
+用户提供 `xj8.ai`，按 `huangguo`（黄果短剧）的写法实现，版本 `0.1.0`。
+
+### 6.1 站点结构（实测）
+
+| 层 | 地址 | 说明 |
+| --- | --- | --- |
+| 回家页 | `https://xj8.ai/` → `https://jn34.com/` | 落地页读 `/assets/home-config.js`，其中 `window.XJ_HOME.domains` 是当前可用应用域 |
+| 应用域 | `xjai6.com` / `xjai7.com` / `xjai8.com` / `xjai9.com` / `26nj2.com` … | Next.js 前端，详情路由 `/dramas/<uuid>`，分集 `/dramas/<uuid>/episodes/<n>` |
+| 接口 | `https://aimedia-api.1ybox.com` | 前端 JS 里硬编码，不随镜像变化 |
+| 图床 | `https://mediacms.frqfwn.cn` | 封面直出，无防盗链（带 Referer 即可） |
+
+### 6.2 用到的接口
+
+| 接口 | 用途 |
+| --- | --- |
+| `GET /api/home/hot` | 首页热播（32 条） |
+| `GET /api/discover` | `ranks.hot` / `ranks.fresh` 榜单 |
+| `GET /api/categories` | 26 个分类 + drama_count |
+| `GET /api/theater?category=&cursor=` | 分类列表，`next_cursor` 游标分页，总数 6626 |
+| `GET /api/search?q=&cursor=` | 搜索，游标分页 |
+| `GET /api/dramas/<id>` | 详情（标题、简介、封面、标签、集数、计费类型） |
+| `GET /api/dramas/<id>/episodes` | 分集（`id`、`episode_number`、`duration_seconds`、`commerce.can_play`） |
+| `POST /api/guest-sessions {device_id}` | 游客会话 → `access_token`（Bearer） |
+| `POST /api/playback/sessions {episode_id}` | 播放会话 → `media.manifest_url`（direct_hls）+ `expires_at` |
+| `POST /api/v1/playback/trial/sessions {episode_id}` | 试看会话；金币集返回 403 `PAYMENT_REQUIRED` |
+
+### 6.3 实现要点
+
+- **线路能力**：`endpoints.list` 先读回家页 `home-config.js` 解析 `domains`，结果缓存 6 小时；抓不到就用内置兜底线路。
+- **游客会话**：`hg.storage` 存 `device:id`（随机 UUID）与 `guest:token`；`resolvePlayback` 遇 `AUTH_REQUIRED` 会换新令牌重试一次，符合「插件自行管理令牌」的约定。
+- **错误映射**：404/410/`CONTENT_UNAVAILABLE` → `NOT_FOUND`；403/`PAYMENT_REQUIRED` → `CONTENT_LOCKED`；429 → `RATE_LIMITED`（`retryAfterSec: 30`）。
+- **播放信息**：`format: hls`、`expiresAt` 取 `media.expires_at`、`resumeSec` 取 `progress_seconds`，流带 `Referer`/`User-Agent` 头。
+- **匹配粘贴链接**：`/dramas/<uuid>` → `mediaId`。
+
+### 6.4 复测结果（宿主模拟器）
+
+```
+✓ endpoints.list      4 条线路（xjai6/7/8/9），2.1s
+✓ home.getSections    热播 32、热播榜 10、新上线 10，封面 52/52
+✓ catalog.categories  27 项（含“全部”）
+✓ catalog.list        全部 50 条 / 分类 50 条，封面 50/50，游标有效
+✓ search“妈妈”        20 条，游标有效
+✓ getDetail           标题/封面/6 个标签/2 集（episode_number 7、8，时长 135s）
+✓ resolvePlayback     两集均返回 HLS，取流 206，#EXTM3U（EXTVERSION:6）
+✓ 封面取流            200 image/jpeg
+```
+
+金币集（`commerce.can_play=false`）按设计抛 `CONTENT_LOCKED`，提示需要解锁。

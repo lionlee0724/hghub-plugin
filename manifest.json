@@ -346,6 +346,13 @@
       "url": "plugins/xingya.js"
     },
     {
+      "id": "xj8",
+      "name": "香蕉短剧",
+      "version": "0.1.0",
+      "description": "香蕉短剧（xj8.ai 官方入口）：首页热播/榜单、分类、搜索、详情、分集与 HLS 播放。插件自动注册游客会话；金币解锁集返回 CONTENT_LOCKED。",
+      "url": "plugins/xj8.js"
+    },
+    {
       "id": "yingxi.source",
       "name": "影夕视频",
       "version": "1.0.1",
