@@ -94,6 +94,13 @@
       "url": "plugins/dhvideo.source.js"
     },
     {
+      "id": "fanguo",
+      "name": "西饭短剧",
+      "version": "0.1.0",
+      "description": "西饭短剧（fanguo）：按题材关键词浏览、搜索、详情与直链播放。接口为 App 端 JSON，无需签名。",
+      "url": "plugins/fanguo.js"
+    },
+    {
       "id": "hanime",
       "name": "Hanime1",
       "version": "1.0.1",
@@ -288,6 +295,13 @@
       "version": "1.0.1",
       "description": "影夕视频（yingxivod.com）：首页最近更新与四个频道、分类分页（地区/首字母/排序）、搜索、详情与直连播放；电视直播频道不暴露。播放页 player_aaaa 明文给出地址，站内 m3u8proxy 的真实地址自行还原；CDN 见到 Referer 就 403，所以默认头里刻意不带 Referer。",
       "url": "plugins/yingxi.source.js"
+    },
+    {
+      "id": "youguo",
+      "name": "柚果",
+      "version": "0.1.0",
+      "description": "柚果（Youavhub）：MacCMS JSON 接口，分类、列表、搜索、详情与 m3u8 直连播放。",
+      "url": "plugins/youguo.js"
     }
   ]
 }
