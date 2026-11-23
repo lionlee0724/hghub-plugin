@@ -59,3 +59,8 @@ curl -s -X POST http://127.0.0.1:8088/v1/chat/completions \
 响应体的 `citations` 会带 `x.com/<账号>/status/<id>` 原始帖，可回溯每条结论。
 注意：提示词里出现「绕过付费/免费看」这类框架会被模型自己拒答（本轮第 7 次检索就撞到了），
 换成「站点索引 / 可用性统计」的口径就能正常返回。
+
+## 后续（2026-11-23 已落地）
+
+`GSCENES` 已逆向成插件 `gscenes` 0.1.0 并入订阅：API 前缀是 `/api/v1`，
+播放要带 `playback` 下发的 CloudFront 签名 cookie。完整接口表和坑见 `FIXES.md` 第 9 节。

@@ -129,6 +129,13 @@
       "url": "plugins/fanguo.js"
     },
     {
+      "id": "gscenes",
+      "name": "基色短剧",
+      "version": "0.1.0",
+      "description": "基色短剧 GScenes（x4bny.cc）：BL / 真人 / AI 成人短剧，分类、搜索、详情与 HLS 播放。VIP 作品按协议返回 CONTENT_LOCKED。",
+      "url": "plugins/gscenes.js"
+    },
+    {
       "id": "hanime",
       "name": "Hanime1",
       "version": "1.0.4",

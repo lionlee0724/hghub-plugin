@@ -285,3 +285,63 @@ ningguo 0.1.2  home 最新/国产自拍            cats 12  detail 标题干净 
 ```
 
 miguo 单个作品常有一条只 1 集的死链线路（如《天庭板砖侠》首条），换线路即可播，9 条线路实测 8 条 200/206。
+
+## 9. 基色短剧 GScenes（x4bny.cc）0.1.0 —— 从 X 挖到的站点，逆向落地
+
+来源：X 上 `@JayChbxe` 的域名更新帖（经 grok 的 X 搜索定位），全站只有这一个「能直接在浏览器看分集」的成人短剧站。
+
+站点形态：Nuxt SPA + 自建 REST API，`__NEXT_DATA__`/`_payload.json` 都不存在，内容是客户端拿的。
+
+### 9.1 接口全集（实测）
+
+| 用途 | 请求 |
+| --- | --- |
+| 游客会话 | `POST /api/v1/auth/guest` → `data.access_token`（JWT，2h） |
+| 列表 | `GET /api/v1/works?page=N&pageSize=20`（服务端固定 20/页）→ `{items,total}` |
+| 分类过滤 | `GET /api/v1/works?category_id=<uuid>`（`category=` 无效） |
+| 题材过滤 | `GET /api/v1/works?tag=<题材名>`（`genre=` 无效，会返回 0 条） |
+| 分类 | `GET /api/v1/work-categories`（34 项：分类 14 + 题材 20） |
+| 题材 | `GET /api/v1/genres`（`{name,count}`） |
+| 榜单 | `GET /api/v1/rankings` |
+| 热搜 | `GET /api/v1/search/hot-works` |
+| 搜索 | `GET /api/v1/search?q=&page=` |
+| 详情 | `GET /api/v1/works/<id>` |
+| 分集 | `GET /api/v1/works/<id>/episodes` → `items[{id,no,title,duration_sec}]`（`hls_url` 恒为空） |
+| 权限 | `GET /api/v1/works/<id>/episodes/<eid>/access` → `access.allowed / access_reason` |
+| 取流 | `POST /api/v1/works/<id>/episodes/<eid>/playback` → `data.play_url` + 3 个 Set-Cookie |
+
+### 9.2 踩到的两个坑
+
+1. **API 前缀是 `/api/v1`**：前端 bundle 里写的是 `/auth/guest`、`/search` 这种片段，前缀在运行时拼。一开始按 `/api/genres` 探测全是 Go 风格 404，白试了七八个路径。
+2. **播放地址带 CloudFront 签名 cookie**：`play_url`（`/hls/<资源id>/episodes/<集id>/index.m3u8`）裸请求 403 `MissingKey`；
+   `playback` 响应里 `Set-Cookie` 给了 `CloudFront-Policy / CloudFront-Signature / CloudFront-Key-Pair-Id`，
+   且 `Path` 精确限定在 `/hls/<资源id>/episodes/<集id>/`。把这三个 cookie 拼进 `stream.headers.Cookie` 后，
+   m3u8 200、`#EXT-X-KEY` 的 16 字节 AES 密钥 200、分片 206 —— 清单内相对路径（`key`、`xxx.ts`）也在这条 Path 下，一并通过。
+
+### 9.3 付费策略（实测，不做绕过）
+
+- 作品 `access_mode` 有 `free` / `paid` 两种；`paid` 作品的前 1–2 集是官方免费试看（`access_reason:"free_preview"`）。
+- 试看集之后 `access.allowed=false`，插件按协议抛 `CONTENT_LOCKED`（提示开通会员）。
+- 实测：《烬临阙》28 集，第 1、2 集 OK，第 3 集起 `CONTENT_LOCKED`。
+
+### 9.4 复测（宿主模拟器）
+
+```
+home      最新上架:20 / 总榜:24 / 热搜:12
+cats      34（古风历史、成人、甜宠恋爱…）
+list(cat) 20 条  next=2
+list(tag=都市) 20 条
+search    "直男" 20 条
+detail    "刀口之蜜" 1 集 封面✓
+play      206 hls（带 cookie）｜AES key 200（16B）｜分片 206（1024B）｜expiresAt 有值
+VIP       第1、2 集播放成功，第 3 集 CONTENT_LOCKED
+```
+
+### 9.5 逆向工具链（用完即删）
+
+VPS 的 hermes 容器里自带 `/opt/hermes/tools/chromium-1208/chrome-linux/chrome`，
+用 `--log-net-log` 抓全量网络，再用 node 26 的全局 `WebSocket` 直连 CDP
+（`--remote-debugging-port` + `Network.requestWillBeSent` + `Runtime.evaluate` 点播放按钮），
+才拿到 `access` / `playback` 这两个只在点击播放时才发的请求。
+年龄门（`age-gate-open`）不影响：直接导航 `/watch/<id>/<集号>/` 即可，播放要过人机验证时点一次播放器遮罩。
+所有临时脚本、51MB netlog、chromium profile 已清理。

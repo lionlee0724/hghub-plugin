@@ -96,6 +96,7 @@ guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移�
 | `mwxk62` | KKAV | 62mwxk.com | stream 206 hls |
 | `xx9` | 主播视频 | xx9.com | 14 个首页分区，stream 206 hls |
 | `rou` | Rou Video（肉視頻） | rou.video | 流被包在 PNG 自定义块里，插件自带解包，stream 206 hls |
+| `gscenes` | 基色短剧 GScenes（BL/真人/AI） | www.x4bny.cc | 792 部作品、34 个分类；自建 REST API（`/api/v1/*`）走游客 JWT；前 1–2 集官方免费试看，VIP 集返回 `CONTENT_LOCKED`；HLS 取流需带上 playback 下发的 CloudFront 签名 cookie |
 
 试过但没入订阅：`haijiao`（海角，播放要登录，`AUTH_REQUIRED`）、`hkdoll`（站点 403，保留观察）。
 
