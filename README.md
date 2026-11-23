@@ -45,3 +45,24 @@ plugins/<插件ID>.js    单文件插件源码，ES 模块，meta.id/version 与
 | `xj8`（香蕉短剧） | `xj8.ai` 官方入口 → `xjai6.com` 等应用域；接口为 `aimedia-api.1ybox.com`。首页热播/榜单、27 个分类、游标分页搜索、详情分集、HLS 播放。播放需游客会话（插件自动注册 `device_id` 并缓存 Bearer 令牌）；金币解锁集返回 `CONTENT_LOCKED`。线路列表从回家页 `assets/home-config.js` 动态读取，6 小时缓存 + 内置兜底线路。 |
 
 明细与排查记录见 `FIXES.md` 第 6 节。
+
+## 已归档（站点确认死亡，不再订阅）
+
+以下 11 个插件已从 `manifest.json` 摘除，源码保留在 `archive/`，站点恢复或换域名后可 `git mv` 回 `plugins/` 再跑一次 `gen-manifest`。
+
+| 插件 | 站点 | 判定依据 |
+| --- | --- | --- |
+| anfuns | anfuns.org | 302 跳 `http://ww547.anfuns.org/?tkn=…` 停放页 |
+| jdys | jdys.art | 302 跳 `http://ww19.jdys.art` 停放页 |
+| xiaohys | xiaohys.com | 302 跳 `www*.xiaohys.com/?tkn=…` 停放页 |
+| duanjutt | duanjutt.tv | 首页 200 但响应体 0 字节 |
+| kxyy.source | kxyy1.cc | 全路径宝塔 404；官方发布页 kxyy.app 仍指同一域名 |
+| local.kxyy | kxyy1.cc | 同上 |
+| zhuiying.source | zhuiying1~3.cc/.com | 6 个镜像全部 404 |
+| aowu | aowu.tv | TLS ECONNRESET（源站关停） |
+| hjkk | hanjukankan.com | 请求持续超时 |
+| saohuo | shdy2.com | HTTP 522（Cloudflare 回源失败） |
+| tiantian | op.ysdqjs.cn | HTTP 502（接口停摆） |
+
+保留观察的：`hanime` / `hkdoll` / `jpyy`（403，疑似按出口 IP 拦截，换节点可再验证）、
+`avtoday` / `hdmoli` / `pornhub` / `xhamster` / `wwgz` / `hhkan.source`（部分功能可用）。

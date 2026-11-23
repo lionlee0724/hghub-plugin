@@ -10,20 +10,6 @@
       "url": "plugins/4kav.js"
     },
     {
-      "id": "anfuns",
-      "name": "anfuns",
-      "version": "1.0.1",
-      "description": "anfuns 动漫源：分类、搜索、多线路详情与播放解析。",
-      "url": "plugins/anfuns.js"
-    },
-    {
-      "id": "aowu",
-      "name": "嗷呜动漫",
-      "version": "1.0.1",
-      "description": "嗷呜动漫：DS 列表接口、详情多线路与 AES 播放解析。",
-      "url": "plugins/aowu.js"
-    },
-    {
       "id": "apple",
       "name": "小苹果",
       "version": "1.0.2",
@@ -108,13 +94,6 @@
       "url": "plugins/dhvideo.source.js"
     },
     {
-      "id": "duanjutt",
-      "name": "短剧天堂",
-      "version": "1.0.1",
-      "description": "短剧天堂：分类、详情与播放。搜索页有验证码，当前不提供搜索。",
-      "url": "plugins/duanjutt.js"
-    },
-    {
       "id": "hanime",
       "name": "Hanime1",
       "version": "1.0.1",
@@ -148,13 +127,6 @@
       "version": "1.0.3",
       "description": "好好看（hhkan1.com）：首页分区、五个频道、关键词搜索、详情与多线路 HLS。站点用 cdndefend 的 JS 挑战挡爬虫，插件里把那道 SHA1 工作量证明直接算出来拿 cookie，全程不需要浏览器。",
       "url": "plugins/hhkan.source.js"
-    },
-    {
-      "id": "hjkk",
-      "name": "韩剧看看",
-      "version": "1.0.1",
-      "description": "韩剧看看：韩剧、韩影、韩综分类、搜索、详情与播放解析。",
-      "url": "plugins/hjkk.js"
     },
     {
       "id": "hkdoll",
@@ -192,13 +164,6 @@
       "url": "plugins/huangguo.source.js"
     },
     {
-      "id": "jdys",
-      "name": "绝对影视",
-      "version": "1.0.1",
-      "description": "绝对影视：分类、搜索、详情与 AES 播放解析。",
-      "url": "plugins/jdys.js"
-    },
-    {
       "id": "jisu.source",
       "name": "极速追剧",
       "version": "1.0.1",
@@ -218,13 +183,6 @@
       "version": "1.0.1",
       "description": "剧踪影院（juzong01.me）：首页分区、四分类分页、搜索、详情与「剧踪独家」加密线路解析（经 wgart 接口换取直链）。",
       "url": "plugins/juzong.source.js"
-    },
-    {
-      "id": "kxyy.source",
-      "name": "开心影院",
-      "version": "1.0.0",
-      "description": "开心影院（kxyy1.cc）：四个分类分页、关键词联想搜索、详情与多线路 m3u8 直连；主域异常自动切备用域名。",
-      "url": "plugins/kxyy.source.js"
     },
     {
       "id": "local.cxkjg",
@@ -253,13 +211,6 @@
       "version": "0.1.1",
       "description": "",
       "url": "plugins/local.kanmovie.js"
-    },
-    {
-      "id": "local.kxyy",
-      "name": "快看影院",
-      "version": "0.1.0",
-      "description": "六条线路的点播源，列表走页面、搜索走 suggest 接口",
-      "url": "plugins/local.kxyy.js"
     },
     {
       "id": "local.pianku",
@@ -297,25 +248,11 @@
       "url": "plugins/pornhub.js"
     },
     {
-      "id": "saohuo",
-      "name": "烧火电影",
-      "version": "1.0.1",
-      "description": "烧火电影：分类、搜索、多线路详情与 iframe 解析播放。",
-      "url": "plugins/saohuo.js"
-    },
-    {
       "id": "tangxin.vlog",
       "name": "糖心Vlog",
       "version": "1.0.1",
       "description": "糖心Vlog 站点数据源：首页分区、演员与标签、全量索引搜索、m3u8 直连播放。",
       "url": "plugins/tangxin.vlog.js"
-    },
-    {
-      "id": "tiantian",
-      "name": "天天影视",
-      "version": "1.0.1",
-      "description": "天天影视 App 接口：分类、搜索、详情与播放。上游为 HTTP，请求带 MD5 签名。",
-      "url": "plugins/tiantian.js"
     },
     {
       "id": "wwgz",
@@ -330,13 +267,6 @@
       "version": "1.0.1",
       "description": "xHamster：分类、搜索、详情与多清晰度播放。",
       "url": "plugins/xhamster.js"
-    },
-    {
-      "id": "xiaohys",
-      "name": "小红影视",
-      "version": "1.0.1",
-      "description": "小红影视：DS 列表接口、详情多线路与 AES 播放解析。",
-      "url": "plugins/xiaohys.js"
     },
     {
       "id": "xingya",
@@ -358,13 +288,6 @@
       "version": "1.0.1",
       "description": "影夕视频（yingxivod.com）：首页最近更新与四个频道、分类分页（地区/首字母/排序）、搜索、详情与直连播放；电视直播频道不暴露。播放页 player_aaaa 明文给出地址，站内 m3u8proxy 的真实地址自行还原；CDN 见到 Referer 就 403，所以默认头里刻意不带 Referer。",
       "url": "plugins/yingxi.source.js"
-    },
-    {
-      "id": "zhuiying.source",
-      "name": "追影",
-      "version": "1.0.2",
-      "description": "追影（zhuiying3.cc）：首页九个分区、六个分类、搜索、详情与多线路解析（player_api 的 md5 token 在插件内自算）。",
-      "url": "plugins/zhuiying.source.js"
     }
   ]
 }
