@@ -243,14 +243,14 @@
     {
       "id": "meiguo",
       "name": "美果",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "description": "美果（shiresm.lol）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
       "url": "plugins/meiguo.js"
     },
     {
       "id": "miguo",
       "name": "米果",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "description": "米果（dmxq40.com）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
       "url": "plugins/miguo.js"
     },
@@ -264,7 +264,7 @@
     {
       "id": "ningguo",
       "name": "柠果",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "description": "柠果（toptv15.cyou）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
       "url": "plugins/ningguo.js"
     },
@@ -285,7 +285,7 @@
     {
       "id": "taoguo",
       "name": "桃果",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "description": "桃果（lujj31.buzz）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
       "url": "plugins/taoguo.js"
     },

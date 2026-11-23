@@ -260,3 +260,28 @@ v0.2.0 因此改为把能用的做到最好：
 ✓ 金币剧播放          自动降级：label="试看 30 秒"，probe 206，片长 30.0s
 ✓ 关闭 trialPreview   按预期抛 CONTENT_LOCKED
 ```
+
+## 7. MacCMS 果系四站 0.1.2（taoguo / meiguo / miguo / ningguo）
+
+统一在 `taoguo` 母版里修，再用脚本生成另外三个（`miguo` 走 `alt-detail` 模式：站点用 `/voddetail/` rewrite 路径）。
+
+| 问题 | 原因 | 修法 |
+| --- | --- | --- |
+| 分类只剩「电影 / 剧集」或全是「更多」 | 原来只按 `/vod/show/id/` 和 `/vodshow/` 猜，多数站导航是 `/vod/type/id/<tid>.html` | 按 `vod/type/id` → `vodtype` → `vod/show/id` → `vodshow` 依次匹配，取 `<a>` 文本当名称；「更多 / 查看更多视频」这类入口只进兜底池；跨域链接跳过 |
+| 片名带「完整版免费在线观看-大米星球」尾巴 | 只认 `<title>` | 改为 `<h1>` → `<h3>` → `meta keywords` 首段 → `og:title` → `<title>` 依次取；清掉 `在线观看 / 迅雷下载 / 详情介绍 / 剧情介绍` 等尾巴与 `资源名称：` 前缀；尾部「-站点名」只在无数字且 ≤8 字时切掉，`START-582`、`MIKR-081` 这类番号不受影响 |
+| `<h1>` 是「在线播放」「猜你喜欢」 | 模板把 `h1` 当小标题用 | 黑名单过滤，命中则跳下一个候选 |
+| 站点偶发回「检测中 / 跳转中」JS 挑战页（200 + HTML） | 站点按频率限流 | `fetchJson` 最多 4 次尝试、退避 1.5s/3s/4.5s；连接被重置（ECONNRESET）同样重试；仍失败才抛 `UPSTREAM_ERROR` 并附页面片段 |
+| 首页分区叫「分类 1 / 分类 2」 | 硬编码 `tid=1/2` | 首页改用导航里的真实分类（前两个），标题即分类名；分类结果按会话缓存 10 分钟，减少请求 |
+| 多线路第一条常播不了 | 站点线路质量不一，只 1 集的线路多为预告或旧源 | 多线路按集数降序，完整片源排前面 |
+| miguo 详情多打一次 404 | 站点用 `/voddetail/<id>.html` | 生成脚本 `alt-detail` 对调主备路径，`matchUrl` 也认 `/voddetail/` |
+
+实测（宿主模拟器，2026-02）：
+
+```
+taoguo  0.1.2  home 最新/亚洲有码/亚洲无码  cats 20  detail 标题干净  stream 200 hls  search 20
+meiguo  0.1.2  home 最新/制服诱惑/中文字幕  cats 8   detail 标题干净  stream 200 hls  search 20
+miguo   0.1.2  home 最新/电影/电视剧        cats 5   detail 标题干净  stream 206 hls  search 10
+ningguo 0.1.2  home 最新/国产自拍            cats 12  detail 标题干净  stream 206 hls  search 20
+```
+
+miguo 单个作品常有一条只 1 集的死链线路（如《天庭板砖侠》首条），换线路即可播，9 条线路实测 8 条 200/206。

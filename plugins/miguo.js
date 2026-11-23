@@ -8,7 +8,7 @@
 export const meta = {
   id: 'miguo',
   name: '米果',
-  version: '0.1.0',
+  version: '0.1.2',
   protocol: 1,
   description: '米果（dmxq40.com）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。',
   author: 'lionlee0724',
@@ -24,7 +24,8 @@ export const meta = {
 
 const SITE = 'https://dmxq40.com';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const DETAIL_RE = /\/vod\/detail\/id\/(\d+)\.html/;
+const DETAIL_RE = /\/voddetail\/(\d+)\.html/;
+const DETAIL_RE_ALT = /\/vod\/detail\/id\/(\d+)\.html/;
 const PLAY_RE = /\/vod\/play\/id\/(\d+)\/sid\/(\d+)\/nid\/(\d+)\.html/;
 const PLAY_RE_ALT = /\/vodplay\/(\d+)-(\d+)-(\d+)\.html/;
 
@@ -48,6 +49,46 @@ export default function (hg) {
     return Number.isFinite(n) ? n : undefined;
   }
 
+  const TITLE_JUNK = /^(?:在线播放|播放列表|播放地址|剧情介绍|内容介绍|猜你喜欢|相关推荐|下载地址|高速下载|影片信息|资源名称|百度云|迅雷下载)$/;
+
+  function cleanTitle(raw) {
+    let t = str(raw).replace(/\s+/g, ' ')
+      .replace(/^(?:资源名称|影片名称|片名|标题|名称)\s*[：:]\s*/, '')
+      .replace(/(?:高清完整版|完整版|高清版|高清)?(?:免费在线观看|在线观看|在线播放|在线收看|迅雷下载|详情介绍|剧情介绍|播放地址|下载)/g, '')
+      .replace(/^[《【\[]\s*/, '')
+      .replace(/\s*[》】\]]$/, '')
+      .replace(/^[：:，,\-–—\s]+/, '')
+      .replace(/[：:，,\-–—\s]+$/, '')
+      .trim();
+    // 尾部「-站点名」（不含数字、长度 ≤8）切掉，`START-582` 这类编号不动
+    const cut = t.match(/^(.*[^-_|])[-_|]([^\d\s-_|]{2,8})$/);
+    if (cut) t = cut[1].trim();
+    return t;
+  }
+
+  // 片名候选按可靠性排序：<h1> → <h3> → meta keywords 首段 → og:title → <title>
+  function pickTitle(doc, id) {
+    const cands = [];
+    const h1 = doc.first('h1');
+    if (h1) cands.push(h1.text());
+    const h3 = doc.first('h3');
+    if (h3) cands.push(h3.text());
+    const kw = doc.first('meta[name="keywords"]');
+    if (kw) cands.push(str(kw.attr('content')).split(/[,，]/)[0]);
+    const og = doc.first('meta[property="og:title"]');
+    if (og) cands.push(og.attr('content'));
+    const tt = doc.first('title');
+    if (tt) {
+      const raw = str(tt.text());
+      cands.push(raw.split(/[ ]+[-|_][ ]+/)[0] || raw);
+    }
+    for (const raw of cands) {
+      const t = cleanTitle(raw);
+      if (t.length >= 2 && !TITLE_JUNK.test(t)) return t;
+    }
+    return id;
+  }
+
   async function fetchText(path, ctx, expectJson) {
     const res = await hg.http.fetch({
       url: path.startsWith('http') ? path : origin() + path,
@@ -64,6 +105,34 @@ export default function (hg) {
     if (res.status === 404) fail('NOT_FOUND', '内容不存在或已下架');
     if (!res.ok) fail(res.status === 429 ? 'RATE_LIMITED' : 'UPSTREAM_ERROR', '站点返回 ' + res.status);
     return res.data;
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // 站点偶发返回「检测中 / 跳转中」的 JS 挑战页（HTTP 200 + HTML），等一会儿换会话重取
+  async function fetchJson(path, ctx) {
+    let lastText = '';
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      let text = '';
+      try {
+        text = str(await fetchText(path, ctx, false));
+      } catch (error) {
+        // 连接被重置、超时同样纳入重试；4 次仍失败才抛出
+        if (attempt >= 3) throw error;
+        await sleep(1500 + attempt * 1500);
+        continue;
+      }
+      lastText = text;
+      const first = text.charAt(0);
+      if (first === '{' || first === '[') {
+        try { return JSON.parse(text); } catch (error) { fail('UPSTREAM_CHANGED', '接口返回的不是有效 JSON'); }
+      }
+      if (attempt < 3) await sleep(1500 + attempt * 1500);
+    }
+    const hint = lastText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    fail('UPSTREAM_ERROR', hint ? '站点返回验证页：' + hint : '接口无响应');
   }
 
   function absUrl(href) {
@@ -101,14 +170,42 @@ export default function (hg) {
   }
 
   async function ajaxList(tid, page, ctx) {
-    const data = await fetchText(
+    const data = await fetchJson(
       `/index.php/ajax/data?mid=1&tid=${encodeURIComponent(tid || '')}&page=${page}&limit=24`,
       ctx,
-      true,
     );
     const list = Array.isArray(data && data.list) ? data.list : [];
     const pageCount = num(data && data.pagecount) || 0;
     return { items: itemsOf(list), next: pageCount > page ? String(page + 1) : null };
+  }
+
+  // 首页导航里的真实分类：名称取 <a> 文本，id 用作列表页的 tid
+  let catsCache = null;
+  async function readCategories(ctx) {
+    if (catsCache && Date.now() - catsCache.at < 600000) return catsCache.list;
+    const html = str(await fetchText('/', ctx, false));
+    const doc = hg.html.parse(html);
+    const list = [];
+    const loose = [];
+    const seen = new Set();
+    const bad = /^(更多|全部|首页|排行|热播|最新|查看更多|查看更多视频|下载|APP|手机版)$/;
+    const selfHost = (origin().match(/^https?:\/\/([^/]+)/) || [])[1] || '';
+    // 站内导航：/vod/type/id/<tid>.html 与 /vodtype/<tid>.html 带真实分类名；/vod/show/id/<tid>.html、/vodshow/<tid>-… 是同一批分类
+    for (const a of doc.select('a')) {
+      const href = str(a.attr('href'));
+      const hrefHost = (href.match(/^https?:\/\/([^/]+)/) || [])[1];
+      if (hrefHost && selfHost && hrefHost !== selfHost) continue;
+      const m = href.match(/\/vod\/type\/id\/(\d+)\.html/) || href.match(/\/vodtype\/(\d+)\.html/) || href.match(/\/vod\/show\/id\/(\d+)\.html/) || href.match(/\/vodshow\/(\d+)[-.].*\.html/);
+      if (!m || seen.has(m[1])) continue;
+      const label = str(a.text()).replace(/\s+/g, '');
+      if (!label || label.length > 10) continue;
+      seen.add(m[1]);
+      (bad.test(label) ? loose : list).push({ id: m[1], label });
+    }
+    const out = list.length ? list : loose;
+    const result = out.length ? out.slice(0, 20) : [{ id: '1', label: '电影' }, { id: '2', label: '剧集' }];
+    catsCache = { at: Date.now(), list: result };
+    return result;
   }
 
   return {
@@ -119,10 +216,11 @@ export default function (hg) {
         const latest = await ajaxList('', 1, ctx);
         const sections = [];
         if (latest.items.length) sections.push({ id: 'latest', title: '最新', layout: 'grid', items: latest.items });
-        for (const tid of ['1', '2']) {
+        const cats = await readCategories(ctx).catch(() => []);
+        for (const cat of cats.slice(0, 2)) {
           try {
-            const page = await ajaxList(tid, 1, ctx);
-            if (page.items.length) sections.push({ id: 'tid:' + tid, title: '分类 ' + tid, layout: 'row', items: page.items });
+            const page = await ajaxList(cat.id, 1, ctx);
+            if (page.items.length) sections.push({ id: 'tid:' + cat.id, title: cat.label, layout: 'row', items: page.items });
           } catch (_) { /* 单分区失败忽略 */ }
         }
         if (!sections.length) fail('UPSTREAM_CHANGED', '首页没有取到内容');
@@ -132,20 +230,7 @@ export default function (hg) {
 
     catalog: {
       async getCategories(params, ctx) {
-        const html = str(await fetchText('/', ctx, false));
-        const doc = hg.html.parse(html);
-        const list = [];
-        const seen = new Set();
-        for (const a of doc.select('a')) {
-          const href = str(a.attr('href'));
-          const m = href.match(/\/vod\/(?:show|type)\/id\/(\d+)\.html/) || href.match(/\/vodshow\/(\d+)[-.].*\.html/);
-          if (!m || seen.has(m[1])) continue;
-          const label = str(a.text()).replace(/\s+/g, '');
-          if (!label || label.length > 12) continue;
-          seen.add(m[1]);
-          list.push({ id: m[1], label });
-        }
-        return list.length ? list.slice(0, 20) : [{ id: '1', label: '电影' }, { id: '2', label: '剧集' }];
+        return readCategories(ctx);
       },
 
       async list(params, ctx) {
@@ -159,7 +244,7 @@ export default function (hg) {
       async search(params, ctx) {
         const q = str(params && params.query);
         if (!q) return { items: [], next: null };
-        const data = await fetchText('/index.php/ajax/suggest?mid=1&wd=' + encodeURIComponent(q), ctx, true);
+        const data = await fetchJson('/index.php/ajax/suggest?mid=1&wd=' + encodeURIComponent(q), ctx);
         const rows = Array.isArray(data && data.list) ? data.list : [];
         const items = [];
         for (const row of rows) {
@@ -181,22 +266,15 @@ export default function (hg) {
         if (!id) fail('INVALID_ARGUMENT', '缺少作品 ID');
         let html = '';
         try {
-          html = str(await fetchText('/index.php/vod/detail/id/' + encodeURIComponent(id) + '.html', ctx, false));
+          html = str(await fetchText('/voddetail/' + encodeURIComponent(id) + '.html', ctx, false));
         } catch (error) {
           if (!error || error.code !== 'NOT_FOUND') throw error;
         }
         if (!html) {
-          html = str(await fetchText('/voddetail/' + encodeURIComponent(id) + '.html', ctx, false));
+          html = str(await fetchText('/index.php/vod/detail/id/' + encodeURIComponent(id) + '.html', ctx, false));
         }
         const doc = hg.html.parse(html);
-        let title = '';
-        const titleTag = doc.first('title');
-        if (titleTag) {
-          const raw = str(titleTag.text());
-          // 只在「空格-空格」这种站点后缀处切分，避免把 START-582 这类编号砍掉
-          title = (raw.split(/[ ]+[-|_][ ]+/)[0] || '').replace(/在线播放|播放地址|详情|高清/g, '').replace(/^[：: ]+/, '').trim();
-        }
-        if (!title) title = id;
+        const title = pickTitle(doc, id);
         let cover = '';
         const coverEl = doc.first('meta[property="og:image"]');
         if (coverEl) cover = absUrl(coverEl.attr('content'));
@@ -232,11 +310,13 @@ export default function (hg) {
         }
         if (!groups.size) fail('UPSTREAM_CHANGED', '未解析到分集');
         const playlists = [];
-        let n = 0;
-        for (const [sid, episodes] of groups) {
-          n += 1;
-          playlists.push({ id: sid, label: '线路 ' + n, episodes });
-        }
+        const rows = [];
+        for (const [sid, episodes] of groups) rows.push({ sid, episodes });
+        // 集数多的线路（完整片源）排前面：只有 1 集的小线路常见于预告或已失效的旧源
+        rows.sort((a, b) => b.episodes.length - a.episodes.length);
+        rows.forEach((row, i) => {
+          playlists.push({ id: row.sid, label: '线路 ' + (i + 1), episodes: row.episodes });
+        });
         return {
           id,
           title,
