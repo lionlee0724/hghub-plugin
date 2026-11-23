@@ -13,11 +13,16 @@
 https://raw.githubusercontent.com/lionlee0724/hghub-plugin/main/manifest.json
 ```
 
-国内网络如直连 raw.githubusercontent.com 失败，可用 jsDelivr 镜像：
+国内网络如直连 raw.githubusercontent.com 失败，可用以下的镜像地址（2026-02 实测都能取到最新 47 条）：
 
 ```
-https://cdn.jsdelivr.net/gh/lionlee0724/hghub-plugin@main/manifest.json
+https://fastly.jsdelivr.net/gh/lionlee0724/hghub-plugin@main/manifest.json
+https://gcore.jsdelivr.net/gh/lionlee0724/hghub-plugin@main/manifest.json
+https://cdn.jsdelivr.net/gh/lionlee0724/hghub-plugin@4ef1c7e/manifest.json   # 按提交钉住，见下
 ```
+
+`cdn.jsdelivr.net/...@main` 的分支缓存最长 12 小时，实测会滞后（曾出现仍返回已归档的 11 个旧插件）。
+要立刻拿到新内容，用上面的 fastly/gcore，或把地址里的版本换成最新提交号（`git log -1 --format=%h`）。
 
 ## 目录结构
 
