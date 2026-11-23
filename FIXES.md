@@ -225,3 +225,38 @@ DOMAIN-SUFFIX,zhuiying3.com,DIRECT
 ```
 
 金币集（`commerce.can_play=false`）按设计抛 `CONTENT_LOCKED`，提示需要解锁。
+### 6.5 计费机制（v0.2.0 修正）
+
+黄果短剧为什么能直接播：huangguo.js 里没有任何 charge / commerce / coin 字样，站点本身没有计费层，
+播放地址由页面或接口直接给出，插件只是搬运。
+
+xj8 的计费在服务端，逐集判定（实测）：
+
+1. 分集字段：commerce{charge_type:"coin", price_coins:10/20, can_play:false, preview_seconds:30}
+2. POST /api/playback/sessions（收费集）→ 403 PAYMENT_REQUIRED「该集需要会员或购买」
+3. POST /api/v1/playback/trial/sessions → 201，play_mode:"trial"，trial_seconds:30
+4. 试看 manifest：路径 media-delivery/direct/v1/platform-trial/…，15 个分片、总长 30.0s、含 #EXT-X-ENDLIST
+5. 重开会话仍是同一段 30 秒；正式地址为 platform/<数字id>/<签名hash>/720p.m3u8?ml_sign=…&t=…
+
+结论：试看不是「前端截断完整片源」，服务端签发的就是物理 30 秒切片；签名与过期时间由服务端下发，
+entitlement 也在服务端，插件层不存在绕过路径。
+
+v0.2.0 因此改为把能用的做到最好：
+
+1. catalog.getFilters 新增「计费：全部 / 只看免费」，list 内部按 charge_type 排序（免费优先）并支持只保留免费。
+2. 收费集播放返回 CONTENT_LOCKED 时，自动降级到官方试看流，streams[0].label = "试看 30 秒"。
+3. 新增设置项 trialPreview（默认开），关掉后收费集直接报 CONTENT_LOCKED。
+4. 全库抽样 150 条里 129 条免费（86%）；首页热播与榜单推的多是金币剧，才让人误以为全站收费。
+
+完整观看收费集只有服务端给的途径：站内充值金币或会员，或用宿主「聚合搜索 → 换源」找其他源的同名内容。
+
+### 6.6 v0.2.0 复测
+
+```
+✓ getFilters          计费筛选（全部 / 只看免费）
+✓ list(all)           50 条，金币 8 条，免费排前
+✓ list(只看免费)      42 条，金币 0 条
+✓ 免费剧播放          正常 HLS
+✓ 金币剧播放          自动降级：label="试看 30 秒"，probe 206，片长 30.0s
+✓ 关闭 trialPreview   按预期抛 CONTENT_LOCKED
+```

@@ -4,9 +4,9 @@
 export const meta = {
   id: 'xj8',
   name: '香蕉短剧',
-  version: '0.1.0',
+  version: '0.2.0',
   protocol: 1,
-  description: '香蕉短剧（xj8.ai 官方入口）：首页热播/榜单、分类、搜索、详情、分集与 HLS 播放。插件自动注册游客会话；金币解锁集返回 CONTENT_LOCKED。',
+  description: '香蕉短剧（xj8.ai 官方入口）：首页热播/榜单、分类（可按计费筛选）、搜索、详情、分集与 HLS 播放。自动注册游客会话；金币集默认给官方 30 秒试看，可关闭。',
   author: 'lionlee0724',
   kind: 'source',
   mature: true,
@@ -20,6 +20,10 @@ export const meta = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   },
   timeouts: { read: 20, playback: 30 },
+  settings: [
+    { key: 'trialPreview', type: 'switch', label: '金币集自动试看 30 秒', default: true,
+      description: '关闭后，需要金币解锁的剧集直接提示 CONTENT_LOCKED，不再自动播放官方试看片段。' },
+  ],
 };
 
 const PORTAL = 'https://xj8.ai';                       // 回家页，/assets/home-config.js 里是当前可用域名
@@ -253,6 +257,16 @@ export default function (hg) {
         return [{ id: 'all', label: '全部' }, ...list];
       },
 
+      async getFilters() {
+        return {
+          filters: [{
+            id: 'charge',
+            label: '计费',
+            options: [{ id: 'all', label: '全部' }, { id: 'free', label: '只看免费' }],
+          }],
+        };
+      },
+
       async list(params, ctx) {
         const categoryId = str(params && params.categoryId);
         const query = {};
@@ -261,9 +275,19 @@ export default function (hg) {
         if (cursor) query.cursor = cursor;
         const data = await call('/api/theater', { ctx, query, timeoutMs: 15000 });
         const body = (data && data.data) || {};
-        return { items: itemsOf(body.items), next: nextOf(body) };
+        let items = itemsOf(body.items);
+        // 站点忽略服务端计费过滤，这里按 commerce.charge_type 处理：免费优先，可选只保留免费
+        const charge = str(params && params.filters && params.filters.charge && params.filters.charge[0]);
+        if (charge === 'free') {
+          items = items.filter((it) => !(it.badge || '').includes('金币'));
+        } else {
+          items = [...items.filter((it) => !(it.badge || '').includes('金币')),
+                   ...items.filter((it) => (it.badge || '').includes('金币'))];
+        }
+        return { items, next: nextOf(body) };
       },
     },
+
 
     search: {
       async search(params, ctx) {
@@ -337,47 +361,64 @@ export default function (hg) {
         if (episodeId.startsWith('n:')) {
           fail('UPSTREAM_CHANGED', '该集缺少内部 ID，请刷新详情后重试');
         }
-        const record = await guestToken(ctx);
-        let data;
-        try {
-          data = await call('/api/playback/sessions', {
-            method: 'POST',
-            body: { episode_id: episodeId },
-            token: record.token,
-            ctx,
-            timeoutMs: 20000,
-          });
-        } catch (error) {
-          // 游客令牌过期：换一个再试一次
-          if (error && error.code === 'AUTH_REQUIRED') {
-            const fresh = await guestToken(ctx, true);
-            data = await call('/api/playback/sessions', {
+
+        async function openSession(path, token, retried) {
+          try {
+            return await call(path, {
               method: 'POST',
               body: { episode_id: episodeId },
-              token: fresh.token,
+              token,
               ctx,
               timeoutMs: 20000,
             });
-          } else {
+          } catch (error) {
+            // 游客令牌过期：换一个再试一次
+            if (!retried && error && error.code === 'AUTH_REQUIRED') {
+              const fresh = await guestToken(ctx, true);
+              return openSession(path, fresh.token, true);
+            }
             throw error;
           }
         }
-        const payload = (data && data.data) || {};
-        const media = payload.media || {};
-        const url = str(media.manifest_url) || str(media.url);
-        if (!url) fail('UPSTREAM_CHANGED', '播放会话没有返回地址');
-        const headers = { Referer: origin() + '/', 'User-Agent': UA };
-        const expiresAt = media.expires_at ? Date.parse(media.expires_at) : NaN;
-        return {
-          streams: [{
-            url,
-            kind: 'media',
-            format: /\.m3u8(\?|$)/i.test(url) ? 'hls' : 'progressive',
-            headers,
-          }],
-          ...(Number.isFinite(expiresAt) ? { expiresAt } : {}),
-          ...(num(payload.progress_seconds) ? { resumeSec: num(payload.progress_seconds) } : {}),
-        };
+
+        function toPlayback(payload, label) {
+          const media = (payload && payload.media) || {};
+          const url = str(media.manifest_url) || str(media.url);
+          if (!url) fail('UPSTREAM_CHANGED', '播放会话没有返回地址');
+          const expiresAt = media.expires_at ? Date.parse(media.expires_at) : NaN;
+          return {
+            streams: [{
+              url,
+              kind: 'media',
+              format: /\.m3u8(\?|$)/i.test(url) ? 'hls' : 'progressive',
+              headers: { Referer: origin() + '/', 'User-Agent': UA },
+              ...(label ? { label } : {}),
+            }],
+            ...(Number.isFinite(expiresAt) ? { expiresAt } : {}),
+            ...(num(payload && payload.progress_seconds) ? { resumeSec: num(payload.progress_seconds) } : {}),
+          };
+        }
+
+        const record = await guestToken(ctx);
+        try {
+          const data = await openSession('/api/playback/sessions', record.token, false);
+          return toPlayback((data && data.data) || {});
+        } catch (error) {
+          if (!error || error.code !== 'CONTENT_LOCKED') throw error;
+          // 金币集：站点只给「官方试看」，服务端签发的是物理 30 秒切片，插件不做绕过，
+          // 但可以在用户开启该设置时自动把试看流交给播放器。
+          const trialEnabled = hg.settings.get('trialPreview') !== false;
+          if (!trialEnabled) throw error;
+          let trial;
+          try {
+            trial = await openSession('/api/v1/playback/trial/sessions', record.token, false);
+          } catch (_) {
+            throw error;
+          }
+          const payload = (trial && trial.data) || {};
+          const seconds = num(payload.trial_seconds) || 30;
+          return toPlayback(payload, '试看 ' + seconds + ' 秒');
+        }
       },
 
       matchUrl(params) {
