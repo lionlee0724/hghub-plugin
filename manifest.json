@@ -241,6 +241,13 @@
       "url": "plugins/madou.js"
     },
     {
+      "id": "meiguo",
+      "name": "美果",
+      "version": "0.1.0",
+      "description": "美果（shiresm.lol）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
+      "url": "plugins/meiguo.js"
+    },
+    {
       "id": "netflixgc.source",
       "name": "奈飞工厂",
       "version": "1.0.1",
@@ -260,6 +267,13 @@
       "version": "1.0.1",
       "description": "糖心Vlog 站点数据源：首页分区、演员与标签、全量索引搜索、m3u8 直连播放。",
       "url": "plugins/tangxin.vlog.js"
+    },
+    {
+      "id": "taoguo",
+      "name": "桃果",
+      "version": "0.1.0",
+      "description": "桃果（lujj31.buzz）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
+      "url": "plugins/taoguo.js"
     },
     {
       "id": "wwgz",

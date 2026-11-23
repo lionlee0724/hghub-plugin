@@ -18,9 +18,9 @@
 | 源 | 域名 | 可用的替代路径 |
 | --- | --- | --- |
 | 米果 miguo | dmxq40.com | `/index.php/ajax/data?mid=1&tid=&page=N`；详情页 `player_aaaa` |
-| 桃果 taoguo | lujj31.buzz | 同上 |
+| 桃果 taoguo | lujj31.buzz | **已移植为 `taoguo` 插件**（ajax/data 列表 + 详情页 + 播放页 player_aaaa） |
 | 榴果 liuguo | www.llsp.me | 同上 |
-| 美果 meiguo | shiresm.lol | 同上 |
+| 美果 meiguo | shiresm.lol | **已移植为 `meiguo` 插件**（同上模板） |
 | 柠果 ningguo | toptv15.cyou | 同上 |
 | 宵果 xiaoguo | yese.co | 同上 |
 | 樱果 yingguo | missav02.xyz | 同上 |

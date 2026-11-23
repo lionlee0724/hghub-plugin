@@ -45,6 +45,8 @@ plugins/<插件ID>.js    单文件插件源码，ES 模块，meta.id/version 与
 | `xj8`（香蕉短剧） | `xj8.ai` 官方入口 → `xjai6.com` 等应用域；接口为 `aimedia-api.1ybox.com`。首页热播/榜单、27 个分类、游标分页搜索、详情分集、HLS 播放。播放需游客会话（插件自动注册 `device_id` 并缓存 Bearer 令牌）；金币解锁集返回 `CONTENT_LOCKED`。线路列表从回家页 `assets/home-config.js` 动态读取，6 小时缓存 + 内置兜底线路。 |
 | `fanguo`（西饭短剧） | App 接口 `xifan-api-cn.youlishipin.com`，无需签名。首页按题材关键词分区，10 个题材分类，详情直接给 `playUrl`（MP4 直链）。移植自 guoapp 的 `fetchFanguoCatalogPage` / `fetchFanguoDetail`。 |
 | `youguo`（柚果） | 标准 MacCMS JSON 接口（`/api.php/provide/vod/`），21 个分类、分页列表、搜索、详情与 m3u8 直连。移植自 guoapp 的 `duanjuProviderCatalog`（Kind: maccms）。 |
+| `taoguo`（桃果） | `lujj31.buzz`。站点关掉了 `api.php`（返回 `closed`），改走 `/index.php/ajax/data` 列表 + 详情页分集 + 播放页 `player_aaaa` 取 m3u8；搜索用 `ajax/suggest`。 |
+| `meiguo`（美果） | `shiresm.lol`，与桃果同一套 MacCMS 模板（同一份代码换域名）。 |
 
 guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移植 / 卡点）见 [`docs/guoapp-sources.md`](docs/guoapp-sources.md)。
 
