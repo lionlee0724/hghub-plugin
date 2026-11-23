@@ -26,6 +26,7 @@ const SITE = 'https://lujj31.buzz';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const DETAIL_RE = /\/vod\/detail\/id\/(\d+)\.html/;
 const PLAY_RE = /\/vod\/play\/id\/(\d+)\/sid\/(\d+)\/nid\/(\d+)\.html/;
+const PLAY_RE_ALT = /\/vodplay\/(\d+)-(\d+)-(\d+)\.html/;
 
 export default function (hg) {
   function origin() {
@@ -178,14 +179,22 @@ export default function (hg) {
       async getDetail(params, ctx) {
         const id = str(params && params.id);
         if (!id) fail('INVALID_ARGUMENT', '缺少作品 ID');
-        const html = str(await fetchText('/index.php/vod/detail/id/' + encodeURIComponent(id) + '.html', ctx, false));
+        let html = '';
+        try {
+          html = str(await fetchText('/index.php/vod/detail/id/' + encodeURIComponent(id) + '.html', ctx, false));
+        } catch (error) {
+          if (!error || error.code !== 'NOT_FOUND') throw error;
+        }
+        if (!html) {
+          html = str(await fetchText('/voddetail/' + encodeURIComponent(id) + '.html', ctx, false));
+        }
         const doc = hg.html.parse(html);
         let title = '';
         const titleTag = doc.first('title');
         if (titleTag) {
           const raw = str(titleTag.text());
           // 只在「空格-空格」这种站点后缀处切分，避免把 START-582 这类编号砍掉
-          title = (raw.split(/[ ]+[-|_][ ]+/)[0] || '').replace(/在线播放|详情|高清/g, '').trim();
+          title = (raw.split(/[ ]+[-|_][ ]+/)[0] || '').replace(/在线播放|播放地址|详情|高清/g, '').replace(/^[：: ]+/, '').trim();
         }
         if (!title) title = id;
         let cover = '';
@@ -204,13 +213,18 @@ export default function (hg) {
         const groups = new Map();
         for (const a of doc.select('a')) {
           const href = str(a.attr('href'));
-          const m = href.match(PLAY_RE);
-          if (!m) continue;
+          let m = href.match(PLAY_RE);
+          let prefix = 'p:';
+          if (!m) {
+            m = href.match(PLAY_RE_ALT);
+            prefix = 'v:';
+            if (!m) continue;
+          }
           const sid = m[2];
           if (!groups.has(sid)) groups.set(sid, []);
           const label = str(a.text()).replace(/\s+/g, ' ') || ('第 ' + m[3] + ' 集');
           groups.get(sid).push({
-            id: m[1] + '-' + m[2] + '-' + m[3],
+            id: prefix + m[1] + '-' + m[2] + '-' + m[3],
             index: groups.get(sid).length + 1,
             episodeNumber: num(m[3]) || groups.get(sid).length + 1,
             label,
@@ -235,9 +249,14 @@ export default function (hg) {
 
       async resolvePlayback(params, ctx) {
         const episodeId = str(params && params.episodeId);
-        const m = episodeId.match(/^(\d+)-(\d+)-(\d+)$/);
+        const alt = episodeId.startsWith('v:');
+        const raw = alt ? episodeId.slice(2) : episodeId.replace(/^p:/, '');
+        const m = raw.match(/^(\d+)-(\d+)-(\d+)$/);
         if (!m) fail('INVALID_ARGUMENT', '分集 ID 无效');
-        const html = str(await fetchText(`/index.php/vod/play/id/${m[1]}/sid/${m[2]}/nid/${m[3]}.html`, ctx, false));
+        const path = alt
+          ? '/vodplay/' + m[1] + '-' + m[2] + '-' + m[3] + '.html'
+          : '/index.php/vod/play/id/' + m[1] + '/sid/' + m[2] + '/nid/' + m[3] + '.html';
+        const html = str(await fetchText(path, ctx, false));
         const cfg = html.match(/player_[a-z]+\s*=\s*(\{[\s\S]*?\})\s*<\/script>/);
         if (!cfg) fail('UPSTREAM_CHANGED', '未找到播放配置');
         let obj;

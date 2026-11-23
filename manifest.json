@@ -248,11 +248,25 @@
       "url": "plugins/meiguo.js"
     },
     {
+      "id": "miguo",
+      "name": "米果",
+      "version": "0.1.0",
+      "description": "米果（dmxq40.com）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
+      "url": "plugins/miguo.js"
+    },
+    {
       "id": "netflixgc.source",
       "name": "奈飞工厂",
       "version": "1.0.1",
       "description": "奈飞工厂（netflixgc.com）：首页与分类走站内 ds_api/vod 接口（POST 返回 JSON），搜索走 /vodsearch，播放页 player_aaaa 的 encrypt=2 用 base64+unescape 解开就是 m3u8。",
       "url": "plugins/netflixgc.source.js"
+    },
+    {
+      "id": "ningguo",
+      "name": "柠果",
+      "version": "0.1.0",
+      "description": "柠果（toptv15.cyou）：MacCMS 页面站，分类、列表、搜索、详情与 m3u8 直连播放。",
+      "url": "plugins/ningguo.js"
     },
     {
       "id": "pornhub",
