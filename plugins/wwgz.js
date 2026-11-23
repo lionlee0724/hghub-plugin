@@ -1,7 +1,7 @@
 export const meta = {
   id: 'wwgz',
   name: '农民影视',
-  version: '1.0.1',
+  version: '1.0.3',
   protocol: 1,
   description: '农民影视：分类、搜索、多线路详情与 nmvod 播放解析。',
   author: 'community',
@@ -144,6 +144,8 @@ export default function (hg) {
           signal: ctx && ctx.signal,
         });
         if (!res.ok) fail('UPSTREAM_ERROR', '搜索暂时不可用（HTTP ' + res.status + '）');
+        // 站点搜索模板缺失时返回「缺少文件：…vod_search.html」（2026-11 起，PC/WAP 均如此）
+        if (/缺少文件|vod_search\.html/.test(res.data || '')) fail('UPSTREAM_ERROR', '站点搜索功能已损坏（服务端缺少模板），请从分类浏览');
         return { items: parseCards(res.data), next: null };
       },
     },
@@ -193,6 +195,10 @@ export default function (hg) {
         const episodeId = params && params.episodeId;
         if (!episodeId) fail('INVALID_ARGUMENT', '缺少分集 ID');
         const playParam = decodeURIComponent(episodeId);
+        // 各线路（xiguam3u8 / lzm3u8 …）存的就是 m3u8 直链：直接播。nmvod 解析服务器已失效，仅对非直链兜底
+        if (/^https?:\/\/[^\s]+\.(m3u8|mp4)(\?|$)/i.test(playParam)) {
+          return { streams: [{ url: playParam, kind: 'media', format: guessFormat(playParam), headers: { 'User-Agent': UA } }] };
+        }
         const html = await fetchHtml('https://api.nmvod.me:520/player/?url=' + encodeURIComponent(playParam), ctx, {
           Referer: origin() + '/',
           'sec-fetch-site': 'cross-site',

@@ -59,6 +59,53 @@ guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移�
 
 明细与排查记录见 `FIXES.md` 第 6 节。
 
+## 外部来源补充（2026-11，对比 `leohenshuai/hghub-plugins`）
+
+### 一、同名插件版本对齐（对方更新，已合入并实测）
+
+| 插件 | 原版本 → 现版本 | 对方修的点 / 实测结果 |
+| --- | --- | --- |
+| `xhamster` | 1.0.1 → 1.0.2 | 补了流地址还原用的 PRNG（`xhPrng`）。之前取流失败，现在 **206 出流** |
+| `pornhub` | 1.0.1 → 1.0.2 | 推荐位与列表去重。之前取流 410，现在 **206 出流** |
+| `hanime` | 1.0.1 → 1.0.4 | 主域换成 `hanimeone.me`（`hanime1.me` 仍 403）。现在 **全链路 206** |
+| `hkdoll` | 1.0.1 → 1.0.5 | 补 `CDN_NODE='t33'` 与 URL 编码处理；站点侧仍 403（按出口 IP 拦） |
+| `4kav` | 1.0.2 → 1.0.3 | 补 `Accept-Language`，域名合并 4kmp/4k-av。**206 出流** |
+| `madou` | 1.0.1 → 1.0.3 | 跳过空的热门分区、修正「更多」判断。**206 出流** |
+| `wwgz` | 1.0.1 → 1.0.3 | 搜索模板缺失检测 + 直链识别。之前 ECONNRESET，现在 **206 出流** |
+| `xingya` | 1.0.1 → 1.0.4 | 超时 25s + 重试 2。**206 出流** |
+| `hdmoli` | 1.0.2 → 2.0.0 | 站点已改网盘站，补搜索页 `.myui-vodlist__media` 与去重；播放为 `kind: external`（跳夸克/百度网盘） |
+| `avtoday` | 1.0.2 → **1.0.6** | 对方到 1.0.4；我方再修首页与分类（见下） |
+
+未动的：`apple`（我方 1.0.2 更新）、`huangguo`（我方 1.1.0 更新）、`jpyy`（同版本）。
+
+### 二、新增成人源（14 个，全部实测到可取流）
+
+| id | 名称 | 域名 | 实测 |
+| --- | --- | --- | --- |
+| `j18` | 18J.TV | 18j.tv | 首页含「最新短剧」频道，list 24 / stream 200 hls |
+| `avjb` | AVJB | avjb.com | 首条详情即「AI 成人短剧」，stream 200 hls |
+| `haose` | 好色TV | boot.pirvmpmir.cc | 首页含「好色短剧」频道，stream 200 hls |
+| `tangxin` | 糖心Vlog | tangxinvlog.pro | 剧情向短片，stream 206 hls |
+| `bl911` | 911爆料网 | blw66.com 等 | 详情 5 集连播，stream 206 hls |
+| `mrds` | 每日大赛 | mrds.com | stream 200 hls |
+| `91porn` | 91porn | 91porn.com / sp2026.com | stream 206 progressive |
+| `porna91` | 91Porna | 91porna.com | stream 200 hls |
+| `porny` | 91Porny（九色） | 91porny.com | stream 206 hls |
+| `pornlulu` | 撸撸视频 | pornlulu.net | 66 个分类，stream 206 hls |
+| `duobo` | 多播 | duobo.vip | 含虎牙/CC 定制频道，stream 206 progressive |
+| `mwxk62` | KKAV | 62mwxk.com | stream 206 hls |
+| `xx9` | 主播视频 | xx9.com | 14 个首页分区，stream 206 hls |
+| `rou` | Rou Video（肉視頻） | rou.video | 流被包在 PNG 自定义块里，插件自带解包，stream 206 hls |
+
+试过但没入订阅：`haijiao`（海角，播放要登录，`AUTH_REQUIRED`）、`hkdoll`（站点 403，保留观察）。
+
+### 三、我方在对方版本上继续修的点
+
+| 插件 | 问题 | 修法 |
+| --- | --- | --- |
+| `avtoday` | 首页 `/` 被站点 302 到 `/*/index.html` 后 404；分类链接被改写成 `/*/catalog/…` 也 404 | 首页改抓 `/catalog`（失败回退 `/`）；`absUrl` 统一剥掉 `/*/` 前缀 |
+| `j18` / `avjb` / `rou` | 宿主传分组节点（`g1` / `fixed` / `main`）当分类时直接报「未知分类」 | `list` 遇到分组节点时取它的第一个子分类再解析 |
+
 ## 已归档（站点确认死亡，不再订阅）
 
 以下 11 个插件已从 `manifest.json` 摘除，源码保留在 `archive/`，站点恢复或换域名后可 `git mv` 回 `plugins/` 再跑一次 `gen-manifest`。

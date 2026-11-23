@@ -5,9 +5,16 @@
     {
       "id": "4kav",
       "name": "4k-av",
-      "version": "1.0.2",
-      "description": "4k-av 影视源（4kmp.com 已 301 到 4k-av.com）：首页、分类、搜索、详情与直链播放。",
+      "version": "1.0.3",
+      "description": "4kmp 影视源：首页、分类、搜索、详情与直链播放。",
       "url": "plugins/4kav.js"
+    },
+    {
+      "id": "91porn",
+      "name": "91porn",
+      "version": "1.0.1",
+      "description": "91porn（含镜像 sp2026.com，可在线路中切换）：分类、搜索、详情与 MP4 播放。",
+      "url": "plugins/91porn.js"
     },
     {
       "id": "apple",
@@ -45,10 +52,17 @@
       "url": "plugins/av591.source.js"
     },
     {
+      "id": "avjb",
+      "name": "AVJB",
+      "version": "1.0.1",
+      "description": "AVJB（avjb.com）：分类（运行时从站点分类页解析）、搜索、免费视频 HLS 播放。会员/金币/VIP 内容游客无法播放，已在列表中过滤。",
+      "url": "plugins/avjb.js"
+    },
+    {
       "id": "avtoday",
       "name": "avtoday",
-      "version": "1.0.2",
-      "description": "avtoday：目录、搜索、详情与 HLS 播放。首页改用 /catalog（站点根路径已 404）。",
+      "version": "1.0.6",
+      "description": "avtoday：分类、搜索、详情与 HLS 播放。",
       "url": "plugins/avtoday.js"
     },
     {
@@ -57,6 +71,13 @@
       "version": "1.0.4",
       "description": "暴风资源采集接口单文件数据源：搜索、分类、详情与 m3u8 直连播放。",
       "url": "plugins/bfzy.source.js"
+    },
+    {
+      "id": "bl911",
+      "name": "911爆料网",
+      "version": "1.0.1",
+      "description": "911爆料网（吃瓜爆料、网红黑料）：图文文章列表与详情，以及帖子内嵌视频（DPlayer HLS）的分类、搜索、播放。封面按站点前端的 AES-CBC 图片协议解密。站点常换 CloudFront 地址，可在线路中切换或刷新。",
+      "url": "plugins/bl911.js"
     },
     {
       "id": "cg91.source",
@@ -94,6 +115,13 @@
       "url": "plugins/dhvideo.source.js"
     },
     {
+      "id": "duobo",
+      "name": "多播 duobo",
+      "version": "1.0.3",
+      "description": "多播 duobo.vip（草老板）：站内文章按日期与主播名匹配到对象存储里的 mp4，直接播放；分类、主播聚合、搜索。首次进入要建索引（约 10 秒），之后缓存 12 小时。",
+      "url": "plugins/duobo.js"
+    },
+    {
       "id": "fanguo",
       "name": "西饭短剧",
       "version": "0.1.0",
@@ -103,7 +131,7 @@
     {
       "id": "hanime",
       "name": "Hanime1",
-      "version": "1.0.1",
+      "version": "1.0.4",
       "description": "Hanime1：分类、搜索、详情与直链播放。",
       "url": "plugins/hanime.js"
     },
@@ -115,10 +143,17 @@
       "url": "plugins/hanime16.source.js"
     },
     {
+      "id": "haose",
+      "name": "好色TV",
+      "version": "1.0.2",
+      "description": "好色TV（boot.pirvmpmir.cc）：成人视频、好色短剧、好色黑料（图文帖内嵌视频）、精选分类与搜索。播放走站点 playback 接口，封面为 AES-CBC 加密图。",
+      "url": "plugins/haose.js"
+    },
+    {
       "id": "hdmoli",
       "name": "hdmoli",
-      "version": "1.0.2",
-      "description": "hdmoli：电影、剧集、动画分类、搜索与封面。站点已改版为网盘资源站，无在线分集，播放需自行下载。",
+      "version": "2.0.0",
+      "description": "HDmoli：电影/剧集/动画分类与搜索。站点已改为网盘资源站，播放会跳转夸克/百度网盘。",
       "url": "plugins/hdmoli.js"
     },
     {
@@ -138,7 +173,7 @@
     {
       "id": "hkdoll",
       "name": "玩偶姐姐",
-      "version": "1.0.1",
+      "version": "1.0.5",
       "description": "玩偶姐姐：分类、搜索、详情与 XOR 解密播放。",
       "url": "plugins/hkdoll.js"
     },
@@ -169,6 +204,13 @@
       "version": "1.0.1",
       "description": "黄果短剧（huangguoai.com）：首页分区、分类与榜单、搜索、详情、HLS 播放与图文。封面走站点 AES-CBC 图床协议并剥掉会过期的 auth_key；取流按签名真实到期时间声明 expiresAt；空分类自动隐藏。",
       "url": "plugins/huangguo.source.js"
+    },
+    {
+      "id": "j18",
+      "name": "18J.TV",
+      "version": "1.0.1",
+      "description": "18J.TV（18j.tv）：分类（运行时从 /label/sort/ 解析，内置兜底）、搜索、短剧多集、HLS 播放。",
+      "url": "plugins/j18.js"
     },
     {
       "id": "jisu.source",
@@ -236,7 +278,7 @@
     {
       "id": "madou",
       "name": "麻豆社",
-      "version": "1.0.1",
+      "version": "1.0.3",
       "description": "麻豆社：分类、搜索、详情与 HLS 播放。",
       "url": "plugins/madou.js"
     },
@@ -255,6 +297,20 @@
       "url": "plugins/miguo.js"
     },
     {
+      "id": "mrds",
+      "name": "每日大赛",
+      "version": "1.0.2",
+      "description": "每日大赛（mrds.com，吃瓜站，含多条镜像线路可切换）：15 个栏目、搜索、详情与 HLS 播放。",
+      "url": "plugins/mrds.js"
+    },
+    {
+      "id": "mwxk62",
+      "name": "KKAV",
+      "version": "1.0.5",
+      "description": "KKAV（入口 62mwxk.com 是跳板页，真实域名每天会变，插件自动解析）：点播源。站点根目录是 meta refresh → /index.htm 年龄确认页 → /home.htm 真实片库。分类、搜索、详情与 HLS 播放（AES-128 加密分片，由播放器按 m3u8 自行解密）。",
+      "url": "plugins/mwxk62.js"
+    },
+    {
       "id": "netflixgc.source",
       "name": "奈飞工厂",
       "version": "1.0.1",
@@ -269,11 +325,46 @@
       "url": "plugins/ningguo.js"
     },
     {
+      "id": "porna91",
+      "name": "91Porna",
+      "version": "1.0.2",
+      "description": "91Porna（91porna.com）：12 个榜单分类、搜索、详情与 HLS 播放（播放接口 + CDN 鉴权头）。",
+      "url": "plugins/porna91.js"
+    },
+    {
       "id": "pornhub",
       "name": "Pornhub",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Pornhub：分类、搜索、详情与 HLS 播放。",
       "url": "plugins/pornhub.js"
+    },
+    {
+      "id": "pornlulu",
+      "name": "撸撸视频 Pornlulu",
+      "version": "1.0.2",
+      "description": "Pornlulu（撸撸）：首页、分类、排行、搜索、详情与 HLS 播放。站点前置 CDNLah「工作量验证」（SHA-256 PoW），插件内自动求解并缓存通行 Cookie。",
+      "url": "plugins/pornlulu.js"
+    },
+    {
+      "id": "porny",
+      "name": "91Porny（九色）",
+      "version": "1.0.1",
+      "description": "91Porny / 九色（91porny.com）：14 个榜单分类、搜索、详情与 HLS 播放。",
+      "url": "plugins/porny.js"
+    },
+    {
+      "id": "rou",
+      "name": "Rou Video",
+      "version": "1.0.2",
+      "description": "Rou Video（肉視頻 rou.video）：分类（主分类/题材）、排序、搜索、首页与详情播放。播放清单与 TS 分片被包在 PNG 自定义块 roUd 里，由插件 transformResource 解包（bit0=1 时 zlib 解压，纯 JS inflate；实测分片均为未压缩直接截取）。",
+      "url": "plugins/rou.js"
+    },
+    {
+      "id": "tangxin",
+      "name": "糖心Vlog",
+      "version": "1.0.1",
+      "description": "糖心Vlog（tangxinvlog.pro）：全部作品 / 博主 / 题材标签分类，站内搜索（基于站点 search-index.json），HLS(AES-128) 播放。",
+      "url": "plugins/tangxin.js"
     },
     {
       "id": "tangxin.vlog",
@@ -292,21 +383,21 @@
     {
       "id": "wwgz",
       "name": "农民影视",
-      "version": "1.0.1",
+      "version": "1.0.3",
       "description": "农民影视：分类、搜索、多线路详情与 nmvod 播放解析。",
       "url": "plugins/wwgz.js"
     },
     {
       "id": "xhamster",
       "name": "xHamster",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "xHamster：分类、搜索、详情与多清晰度播放。",
       "url": "plugins/xhamster.js"
     },
     {
       "id": "xingya",
       "name": "星芽短剧",
-      "version": "1.0.1",
+      "version": "1.0.4",
       "description": "星芽短剧 App 接口：分类、搜索、详情与直链播放。登录令牌保存在插件存储中。",
       "url": "plugins/xingya.js"
     },
@@ -316,6 +407,13 @@
       "version": "0.2.0",
       "description": "香蕉短剧（xj8.ai 官方入口）：首页热播/榜单、分类（可按计费筛选）、搜索、详情、分集与 HLS 播放。自动注册游客会话；金币集默认给官方 30 秒试看，可关闭。",
       "url": "plugins/xj8.js"
+    },
+    {
+      "id": "xx9",
+      "name": "主播视频",
+      "version": "1.0.3",
+      "description": "主播视频（xx9.com）：点播源。分类、搜索、专题、详情与 HLS 播放。接口为 AES-ECB 加密网关（密钥按时间戳尾数轮换），自动获取 jwtToken 与游客 accessToken；封面为单字节 XOR 加密。",
+      "url": "plugins/xx9.js"
     },
     {
       "id": "yingxi.source",

@@ -1,19 +1,21 @@
 export const meta = {
   id: '4kav',
   name: '4k-av',
-  version: '1.0.2',
+  version: '1.0.3',
   protocol: 1,
-  description: '4k-av 影视源（4kmp.com 已 301 到 4k-av.com）：首页、分类、搜索、详情与直链播放。',
+  description: '4kmp 影视源：首页、分类、搜索、详情与直链播放。',
   author: 'community',
   kind: 'source',
-  linkDomains: ['4kmp.com', 'www.4kmp.com', '4k-av.com', 'www.4k-av.com'],
+  linkDomains: ['4k-av.com', 'www.4k-av.com', '4kmp.com', 'www.4kmp.com'],
   defaultHeaders: {
     Referer: 'https://4k-av.com/',
+    'Accept-Language': 'zh-CN,zh-Hans;q=0.9',
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
   },
   timeouts: { read: 20, playback: 30 },
 };
 
+// 4kmp.com 已 301 到 4k-av.com；站点 WAF 对不带 Accept-Language 的请求返回 403
 const SITE = 'https://4k-av.com';
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1';
 const TABS = [
@@ -30,7 +32,7 @@ export default function (hg) {
   }
 
   function headers() {
-    return { 'User-Agent': UA, Referer: origin() + '/' };
+    return { 'User-Agent': UA, Referer: origin() + '/', 'Accept-Language': 'zh-CN,zh-Hans;q=0.9' };
   }
 
   function fail(code, message, extra) {
@@ -187,8 +189,17 @@ export default function (hg) {
       async search(params, ctx) {
         const q = params && params.query ? String(params.query).trim() : '';
         if (!q) return { items: [], next: null };
-        const html = await fetchHtml(origin() + '/en/s?u=' + encodeURIComponent(q), ctx);
-        return { items: parseCards(html), next: null };
+        // 搜索参数是 u（不是 q，q 会被 WAF 403）；分页与分类一样倒序：默认页即「页次 N/N」，再往前是 N-1…1
+        const base = origin() + '/s?u=' + encodeURIComponent(q);
+        const cur = pageOf(params && params.cursor);
+        if (cur.page > 1 && cur.last) {
+          const html = await fetchHtml(base + '&page=' + (cur.last - cur.page + 1), ctx);
+          const next = cur.page + 1;
+          return { items: parseCards(html), next: next <= cur.last ? next + ':' + cur.last : null };
+        }
+        const html = await fetchHtml(base, ctx);
+        const last = parseLastPage(html);
+        return { items: parseCards(html), next: last > 1 ? '2:' + last : null };
       },
     },
 

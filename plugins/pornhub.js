@@ -1,7 +1,7 @@
 export const meta = {
   id: 'pornhub',
   name: 'Pornhub',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
   description: 'Pornhub：分类、搜索、详情与 HLS 播放。',
   author: 'community',
@@ -80,6 +80,7 @@ export default function (hg) {
     const doc = hg.html.parse(html);
     const items = [];
     const nodes = doc.select('li.videoBox, li.pcVideoListItem, li.videoblock');
+    const seen = {};   // 「最热」等页面里推荐位与列表会出现同一视频
     for (let i = 0; i < nodes.length; i++) {
       const a = nodes[i].first('.phimage a.img') || nodes[i].first('a');
       const titleA = nodes[i].first('.title a') || a;
@@ -89,7 +90,10 @@ export default function (hg) {
       const img = nodes[i].first('.phimage a.img img') || nodes[i].first('img');
       const cover = img && (img.attr('data-mediumthumb') || img.attr('data-src') || img.attr('src'));
       const dur = nodes[i].first('.duration');
-      const item = { id: pathId(href), title: title.trim(), type: 'movie' };
+      const vid = pathId(href);
+      if (seen[vid]) continue;
+      seen[vid] = 1;
+      const item = { id: vid, title: title.trim(), type: 'movie' };
       if (cover) item.cover = absUrl(cover);
       if (dur) {
         const note = dur.text().trim();
@@ -164,25 +168,43 @@ export default function (hg) {
       async resolvePlayback(params, ctx) {
         const episodeId = params && params.episodeId;
         if (!episodeId) fail('INVALID_ARGUMENT', '缺少分集 ID');
-        const html = await fetchHtml(absUrl(episodeId), ctx);
-        const m = html.match(/var flashvars_.* = \{([\s\S]*?)\};/);
-        if (!m) fail('UPSTREAM_CHANGED', '未找到播放配置');
-        let json;
-        try { json = JSON.parse('{' + m[1] + '}'); } catch (_) { fail('UPSTREAM_CHANGED', '播放配置不是 JSON'); }
-        const defs = Array.isArray(json.mediaDefinitions) ? json.mediaDefinitions : [];
+        // 站点每次随机分配 CDN：hv-h.phncdn.com 的 HLS 返回 410，ev-h 可用（2026-11 实测）。
+        // 拿到 hv-h 就重新取页（最多 3 次）；最后用 get_media 的 mp4 直链兜底。
+        let defs = [], getMedia = '';
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const html = await fetchHtml(absUrl(episodeId), ctx);
+          const m = html.match(/var flashvars_.* = \{([\s\S]*?)\};/);
+          if (!m) fail('UPSTREAM_CHANGED', '未找到播放配置');
+          let json;
+          try { json = JSON.parse('{' + m[1] + '}'); } catch (_) { fail('UPSTREAM_CHANGED', '播放配置不是 JSON'); }
+          defs = Array.isArray(json.mediaDefinitions) ? json.mediaDefinitions : [];
+          const gm = defs.find(function (e) { return e && e.format === 'mp4' && e.videoUrl; });
+          if (gm) getMedia = gm.videoUrl;
+          const hls = defs.filter(function (e) { return e && e.format === 'hls' && e.videoUrl; });
+          if (hls.length && !hls.some(function (e) { return /\/\/hv-h\.phncdn\.com\//.test(e.videoUrl); })) break;
+        }
         const streams = [];
         for (let i = 0; i < defs.length; i++) {
           const e = defs[i];
           if (!e || e.format !== 'hls' || !e.videoUrl) continue;
-          streams.push({
-            url: e.videoUrl,
-            kind: 'media',
-            format: 'hls',
-            label: String(e.quality || 'hls'),
-            headers: headers(),
-          });
+          if (/\/\/hv-h\.phncdn\.com\//.test(e.videoUrl)) continue;   // 失效节点
+          const h = parseInt(e.quality, 10);
+          streams.push({ url: e.videoUrl, kind: 'media', format: 'hls', label: String(e.quality || 'hls'), height: Number.isFinite(h) ? h : undefined, headers: headers() });
         }
-        if (!streams.length) fail('UPSTREAM_CHANGED', '未解析到 HLS 地址');
+        if (!streams.length && getMedia) {
+          try {
+            const res = await hg.http.fetch({ url: absUrl(getMedia), headers: headers(), responseType: 'json', timeoutMs: 15000, signal: ctx && ctx.signal });
+            const rows = Array.isArray(res.data) ? res.data : [];
+            for (let i = 0; i < rows.length; i++) {
+              const r = rows[i];
+              if (!r || !r.videoUrl) continue;
+              const h = parseInt(r.quality, 10);
+              streams.push({ url: r.videoUrl, kind: 'media', format: /\.m3u8/.test(r.videoUrl) ? 'hls' : 'progressive', label: String(r.quality || 'mp4'), height: Number.isFinite(h) ? h : undefined, headers: headers() });
+            }
+          } catch (_) {}
+        }
+        if (!streams.length) fail('UPSTREAM_CHANGED', '未解析到可用播放地址');
+        streams.sort(function (a, b) { return (b.height || 0) - (a.height || 0); });
         return { streams: streams.slice(0, 16) };
       },
     },

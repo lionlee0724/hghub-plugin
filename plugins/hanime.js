@@ -1,21 +1,23 @@
 export const meta = {
   id: 'hanime',
   name: 'Hanime1',
-  version: '1.0.1',
+  version: '1.0.4',
   protocol: 1,
   description: 'Hanime1：分类、搜索、详情与直链播放。',
   author: 'community',
   kind: 'source',
   mature: true,
-  linkDomains: ['hanime1.me'],
+  linkDomains: ['hanime1.me', 'hanimeone.me'],
   defaultHeaders: {
-    Referer: 'https://hanime1.me/',
+    Referer: 'https://hanimeone.me/',
+    'Accept-Language': 'zh-CN,zh-Hant;q=0.9',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   },
   timeouts: { read: 20, playback: 30 },
 };
 
-const SITE = 'https://hanime1.me';
+// hanime1.me 主域被 Cloudflare 人机挑战拦截（任何请求头都 403）；改用官方镜像 hanimeone.me
+const SITE = 'https://hanimeone.me';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 export default function (hg) {
@@ -26,7 +28,7 @@ export default function (hg) {
   }
 
   function headers() {
-    return { 'User-Agent': UA, Referer: origin() + '/' };
+    return { 'User-Agent': UA, Referer: origin() + '/', 'Accept-Language': 'zh-CN,zh-Hant;q=0.9' };
   }
 
   function fail(code, message, extra) {
@@ -47,12 +49,14 @@ export default function (hg) {
     return res.data;
   }
 
+  // 链接里的中文/空格必须编码，否则站点返回 400（如 genre=裏番）
+  function encodeUrl(u) { try { return encodeURI(decodeURI(u)); } catch (e) { return encodeURI(u); } }
   function absUrl(href) {
     if (!href) return '';
-    if (/^https?:\/\//i.test(href)) return href;
+    if (/^https?:\/\//i.test(href)) return encodeUrl(href);
     if (href.startsWith('//')) return 'https:' + href;
     const o = origin();
-    return href.startsWith('/') ? o + href : o + '/' + href;
+    return encodeUrl(href.startsWith('/') ? o + href : o + '/' + href);
   }
 
   function pageOf(cursor) {
@@ -63,6 +67,27 @@ export default function (hg) {
   function parseCards(html) {
     const doc = hg.html.parse(html);
     const items = [];
+    // 新版列表/搜索页卡片：.video-item-container（2026-11 起）
+    const cards = doc.select('.video-item-container');
+    const seen = {};
+    for (let i = 0; i < cards.length; i++) {
+      const el = cards[i];
+      const a = el.first('a.video-link') || el.first('a');
+      const href = a && a.attr('href');
+      if (!href || href.indexOf('watch?v=') < 0 || seen[href]) continue;   // 跳过赞助商外链
+      seen[href] = 1;
+      const t = el.first('.title');
+      const title = (el.attr('title') || (t ? t.text() : '')).trim();
+      if (!title) continue;
+      const img = el.first('img.main-thumb') || el.first('img');
+      const item = { id: absUrl(href), title, type: 'anime' };
+      const cover = img && img.attr('src');
+      if (cover) item.cover = absUrl(cover);
+      const dur = el.first('.duration');
+      if (dur && dur.text()) item.badge = dur.text().trim().slice(0, 8);
+      items.push(item);
+    }
+    if (items.length) return items;
     let nodes = doc.select('.home-rows-videos-wrapper > a');
     if (!nodes.length) nodes = doc.select('.content-padding-new > .row > .search-doujin-videos.col-xs-6, .col-xs-6');
     for (let i = 0; i < nodes.length; i++) {
@@ -92,6 +117,7 @@ export default function (hg) {
       const href = links[i].attr('href');
       if (!name || !href) continue;
       if (name.indexOf('新番預告') >= 0 || name.indexOf('H漫畫') >= 0) continue;
+      if (!/\/search\?/.test(href) || (/^https?:/i.test(href) && href.indexOf(origin().replace(/^https?:\/\//, '')) < 0)) continue;   // 外链广告
       items.push({ id: absUrl(href), label: name });
     }
     return items.length ? items : [{ id: origin() + '/', label: '首页' }];
@@ -123,7 +149,7 @@ export default function (hg) {
         if (page > 1) url += (url.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page;
         const html = await fetchHtml(url, ctx);
         const items = parseCards(html);
-        return { items, next: items.length ? String(page + 1) : null };
+        return { items, next: items.length >= 20 ? String(page + 1) : null };   // 不足一页即最后一页
       },
     },
 
@@ -166,16 +192,29 @@ export default function (hg) {
         const episodeId = params && params.episodeId;
         if (!episodeId) fail('INVALID_ARGUMENT', '缺少分集 ID');
         const html = await fetchHtml(absUrl(episodeId), ctx);
-        const m = html.match(/contentUrl"\s*:\s*"(.*?)"/);
-        if (!m) fail('UPSTREAM_CHANGED', '未解析到播放地址');
-        return {
-          streams: [{
-            url: m[1],
-            kind: 'media',
-            format: guessFormat(m[1]),
-            headers: headers(),
-          }],
-        };
+        // 2026-11 起播放地址在 <video><source src size="1080"> 里，多清晰度；旧版 JSON-LD contentUrl 作回退
+        const doc = hg.html.parse(html);
+        const streams = [];
+        const seen = {};
+        const nodes = doc.select('video source[src]');
+        for (let i = 0; i < nodes.length; i++) {
+          const url = (nodes[i].attr('src') || '').replace(/&amp;/g, '&');
+          if (!url || seen[url]) continue;
+          seen[url] = 1;
+          const h = parseInt(nodes[i].attr('size') || '', 10);
+          const st = { url, kind: 'media', format: guessFormat(url), headers: headers() };
+          if (Number.isFinite(h) && h > 0) { st.height = h; st.label = h + 'P'; }
+          streams.push(st);
+        }
+        if (!streams.length) {
+          const m = html.match(/contentUrl"\s*:\s*"(.*?)"/);
+          if (m) streams.push({ url: m[1].replace(/\\\//g, '/'), kind: 'media', format: guessFormat(m[1]), headers: headers() });
+        }
+        if (!streams.length) fail('UPSTREAM_CHANGED', '未解析到播放地址');
+        streams.sort(function (a, b) { return (b.height || 0) - (a.height || 0); });   // 高清在前
+        const max = params && params.maxHeight;
+        const fit = max ? streams.filter(function (x) { return !x.height || x.height <= max; }) : streams;
+        return { streams: fit.length ? fit : streams };
       },
     },
   };

@@ -1,9 +1,9 @@
 export const meta = {
   id: 'avtoday',
   name: 'avtoday',
-  version: '1.0.2',
+  version: '1.0.6',
   protocol: 1,
-  description: 'avtoday：目录、搜索、详情与 HLS 播放。首页改用 /catalog（站点根路径已 404）。',
+  description: 'avtoday：分类、搜索、详情与 HLS 播放。',
   author: 'community',
   kind: 'source',
   mature: true,
@@ -47,12 +47,16 @@ export default function (hg) {
     return res.data;
   }
 
+  // 中文分类路径必须编码：未编码的 絲襪.html?page=2 会被站点当成第 1 页
+  function encodeUrl(u) { try { return encodeURI(decodeURI(u)); } catch (e) { return encodeURI(u); } }
   function absUrl(href) {
     if (!href) return '';
-    if (/^https?:\/\//i.test(href)) return href;
-    if (href.startsWith('//')) return 'https:' + href;
-    const o = origin();
-    return href.startsWith('/') ? o + href : o + '/' + href;
+    let u = '';
+    if (/^https?:\/\//i.test(href)) u = encodeUrl(href);
+    else if (href.startsWith('//')) u = encodeUrl('https:' + href);
+    else u = encodeUrl(href.startsWith('/') ? origin() + href : origin() + '/' + href);
+    // 站点把分类/详情链接改写成 /<*>/catalog/…，带这个前缀一律 404
+    return u.replace(/\/\*\//g, '/');
   }
 
   function pathId(href) {
@@ -69,9 +73,20 @@ export default function (hg) {
     return Number.isFinite(n) && n > 0 ? n : 1;
   }
 
+  function nextUrl(base, page) {
+    const b = base.replace(/([?&])page=\d+&?/, '$1').replace(/[?&]$/, '');
+    return page > 1 ? b + (b.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page : b;
+  }
+
+  function hasNext(html, page) {
+    return html.indexOf('page=' + (page + 1) + '"') >= 0;
+  }
+
   function parseCards(html) {
     const doc = hg.html.parse(html);
     const items = [];
+    const seen = {};   // 首页同一部片会在多个板块重复渲染（实测 29 个块里只有 22 个唯一地址），
+                       // 不去重宿主会逐条报 warn「重复条目已丢弃」；pathId 为空的是广告位（如 /live），直接跳过
     const nodes = doc.select('.thumbnail');
     for (let i = 0; i < nodes.length; i++) {
       const a = nodes[i].first('.video-title a');
@@ -79,11 +94,14 @@ export default function (hg) {
       if (!title || title.indexOf('[廣告]') >= 0) continue;
       const href = a.attr('href');
       if (!href) continue;
+      const id = pathId(href);
+      if (!id || id === '/' || seen[id]) continue;
+      seen[id] = true;
       const preview = nodes[i].first('.preview-video');
       const style = preview && preview.attr('style');
       const coverM = style && style.match(/url\('(.*?)'\)/);
       const tag = nodes[i].first('.video-tag');
-      const item = { id: pathId(href), title: title.trim(), type: 'movie' };
+      const item = { id: id, title: title.trim(), type: 'movie' };
       if (coverM) item.cover = absUrl(coverM[1]);
       if (tag) {
         const note = tag.text().trim();
@@ -105,6 +123,7 @@ export default function (hg) {
       const name = nameEl ? nameEl.text().trim() : '';
       const href = a && a.attr('href');
       if (!name || !href) continue;
+      { const u = absUrl(href); if (u.indexOf(origin().replace(/^https?:\/\//, '').replace(/^www\./, '')) < 0) continue; }   // 跳过站外广告链接（Telegram、导航站等）
       items.push({ id: absUrl(href), label: name });
     }
     return items.length ? items : [{ id: origin() + '/catalog', label: '目录' }];
@@ -115,8 +134,17 @@ export default function (hg) {
 
     home: {
       async getSections(params, ctx) {
-        const html = await fetchHtml(origin() + '/catalog', ctx);
-        return { items: [{ id: 'latest', title: '最新', layout: 'grid', items: parseCards(html) }], next: null };
+        // 站点已把首页 / 302 到 /*/index.html?ref=…（404），/catalog 才是真实首页
+        let html = '';
+        try {
+          html = await fetchHtml(origin() + '/catalog', ctx);
+        } catch (error) {
+          if (!error || error.code !== 'UPSTREAM_ERROR') throw error;
+          html = await fetchHtml(origin() + '/', ctx);
+        }
+        const cards = parseCards(html);
+        if (!cards.length) fail('UPSTREAM_CHANGED', '首页没有取到内容');
+        return { items: [{ id: 'latest', title: '最新', layout: 'grid', items: cards }], next: null };
       },
     },
 
@@ -127,11 +155,17 @@ export default function (hg) {
       async list(params, ctx) {
         const cat = (params && params.categoryId) || origin() + '/';
         const page = pageOf(params && params.cursor);
-        let url = absUrl(cat);
-        if (page > 1) url += (url.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page;
+        const url = nextUrl(absUrl(cat), page);
         const html = await fetchHtml(url, ctx);
         const items = parseCards(html);
-        return { items, next: items.length ? String(page + 1) : null };
+        if (!items.length || !hasNext(html, page)) return { items, next: null };
+        // 站点在最后一页仍渲染 Next，而越界页码会 302 回第 1 页：不跟随跳转预取，被重定向或为空即到底
+        const pr = await hg.http.fetch({ url: nextUrl(url, page + 1), headers: headers(), responseType: 'text', redirect: 'manual', timeoutMs: 15000, signal: ctx && ctx.signal });
+        if (pr.status >= 300 && pr.status < 400) return { items, next: null };
+        const probe = pr.ok ? parseCards(pr.data) : [];
+        const first = {}; items.forEach(function (x) { first[x.id] = 1; });
+        const fresh = probe.filter(function (x) { return !first[x.id]; });
+        return { items, next: fresh.length ? String(page + 1) : null };
       },
     },
 
@@ -140,7 +174,10 @@ export default function (hg) {
         const q = params && params.query ? String(params.query).trim() : '';
         if (!q) return { items: [], next: null };
         const page = pageOf(params && params.cursor);
-        const html = await fetchHtml(origin() + '/search?s=' + encodeURIComponent(q) + '&page=' + page, ctx);
+        const res = await hg.http.fetch({ url: origin() + '/search?s=' + encodeURIComponent(q) + '&page=' + page, headers: headers(), responseType: 'text', timeoutMs: 15000, signal: ctx && ctx.signal });
+        if (res.status === 403 || /Just a moment|cf-chl/.test(res.data || '')) fail('UPSTREAM_ERROR', '站点搜索被 Cloudflare 人机验证拦截，暂不可用；请从分类浏览');
+        if (!res.ok) fail('UPSTREAM_ERROR', '搜索暂时不可用（HTTP ' + res.status + '）');
+        const html = res.data;
         const items = parseCards(html);
         return { items, next: items.length ? String(page + 1) : null };
       },
@@ -171,18 +208,22 @@ export default function (hg) {
         const episodeId = params && params.episodeId;
         if (!episodeId) fail('INVALID_ARGUMENT', '缺少分集 ID');
         const pageUrl = absUrl(episodeId);
-        const code = (pageUrl.split('/video/')[1] || '').replace(/\/$/, '');
+        // 详情页路径形如 /cht/video/FC2PPV-5008104.html，播放器只认不带 .html 的编号
+        const code = (pageUrl.split('/video/')[1] || '').replace(/\/$/, '').replace(/\.html?$/i, '');
         if (!code) fail('INVALID_ARGUMENT', '作品编号无效');
         const playerUrl = origin() + '/player?s=' + encodeURIComponent(code);
         const html = await fetchHtml(playerUrl, ctx, { Referer: pageUrl });
-        const m = html.match(/m3u8_url\s+=\s+'(.+)'/);
-        if (!m) fail('UPSTREAM_CHANGED', '未解析到播放地址');
+        // 2026-11 起多数作品给 video_link（mp4，签名绑定 UA），m3u8_url 为空；两者都试
+        const pick = function (name) { const m = html.match(new RegExp(name + "\\s*=\\s*'([^']*)'")); return m ? m[1].trim() : ''; };
+        const mp4 = pick('video_link'), m3u8 = pick('m3u8_url');
+        const url = mp4 || m3u8;
+        if (!url) fail('UPSTREAM_CHANGED', '未解析到播放地址');
         return {
           streams: [{
-            url: m[1],
+            url: url,
             kind: 'media',
-            format: 'hls',
-            headers: { 'User-Agent': UA, Referer: playerUrl + '/' },
+            format: mp4 ? (/\.m3u8(\?|$)/i.test(mp4) ? 'hls' : 'progressive') : 'hls',
+            headers: { 'User-Agent': UA, Referer: origin() + '/' },   // UA 必须与取签名时一致
           }],
         };
       },

@@ -1,7 +1,7 @@
 export const meta = {
   id: 'xingya',
   name: '星芽短剧',
-  version: '1.0.1',
+  version: '1.0.4',
   protocol: 1,
   description: '星芽短剧 App 接口：分类、搜索、详情与直链播放。登录令牌保存在插件存储中。',
   author: 'community',
@@ -95,7 +95,8 @@ export default function (hg) {
       headers: h,
       body: { form: { device: deviceId() } },
       responseType: 'json',
-      timeoutMs: 15000,
+      timeoutMs: 25000,
+      retry: 2,
     });
     if (!res.ok) fail('UPSTREAM_ERROR', '登录暂时不可用（HTTP ' + res.status + '）');
     const token = res.data && res.data.data && res.data.data.token;
@@ -116,8 +117,8 @@ export default function (hg) {
       url,
       headers,
       responseType: 'json',
-      timeoutMs: 15000,
-      retry: 1,
+      timeoutMs: 25000,   // 接口偶发 9–12s 慢响应
+      retry: 2,
       signal: ctx && ctx.signal,
     };
     if (opt && opt.method === 'POST') {
@@ -189,8 +190,14 @@ export default function (hg) {
           ctx,
           '分类',
         );
-        const items = mapList(body.data && body.data.list);
-        return { items, next: items.length >= 24 ? String(page + 1) : null };
+        const all = mapList(body.data && body.data.list);
+        // 部分分类（如「星选好剧」）忽略 page_num/page_size，一次返回全部且每页相同：本地按 24 条切片
+        if (all.length > 24) {
+          const start = (page - 1) * 24;
+          const items = all.slice(start, start + 24);
+          return { items, next: start + 24 < all.length ? String(page + 1) : null };
+        }
+        return { items: all, next: all.length >= 24 ? String(page + 1) : null };
       },
     },
 
@@ -264,6 +271,9 @@ export default function (hg) {
         }
         if (!url && theaters[0]) url = theaters[0].son_video_url;
         if (!url) fail('UPSTREAM_CHANGED', '未解析到播放地址');
+        // 接口下发的是 http://qcapp.xingya.com.cn/...，宿主只接受 https（未声明 allowInsecureHttp），
+        // 否则流会被全部丢弃并报「没有合法可播放流」。同域 https 实测可用（2026-11-21）。
+        url = String(url).replace(/^http:\/\//i, 'https://');
         return {
           streams: [{
             url,
