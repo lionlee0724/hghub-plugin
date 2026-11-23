@@ -103,7 +103,7 @@
     {
       "id": "dhvideo.source",
       "name": "豆花电影网",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "豆花电影网（dhvideo.cc）：五个频道分页、搜索、多线路详情；播放走 /api/m3u8 跳转到 HLS，遇 sha1 工作量校验时插件内自行求解。",
       "url": "plugins/dhvideo.source.js"
     },
@@ -236,7 +236,7 @@
     {
       "id": "local.dapian",
       "name": "大片网",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "mxpro 模板点播源，两条播放线路，播放地址需 base64 + URL 解码",
       "url": "plugins/local.dapian.js"
     },

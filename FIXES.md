@@ -107,3 +107,68 @@ git add -A && git commit -m "fix(插件ID): 说明" && git push
 ```
 
 HGhub 里刷新订阅即可看到新版本。
+
+---
+
+## 5. 第二轮：按规范继续修复（含域名溯源）
+
+依据 HPP 规范 [04 §9](https://github.com/Minireel/HGhub/blob/main/docs/plugin-protocol/04-host-api.md)
+「需要执行页面脚本才能取得的数据，由插件自行还原其算法」，对每个报错站点逐个逆向。
+
+### 5.1 新增修复
+
+| 插件 | 版本 | 根因 | 修复与复测 |
+| --- | --- | --- | --- |
+| local.dapian（大片网） | 0.1.0 → 0.1.1 | `player_aaaa.encrypt=2` 的地址是 **base64(URL 编码)** 一层：`JTY4JTc0…` → base64 → `%68%74%74%70…` → URL 解码 → `https://vv.jisuzyv.com/play/e5yAKrxe/index.m3u8`。旧实现解完 base64 又把结果当 base64 解，拿到乱码后报「播放地址无效」 | `decodeUrl` 改为「base64 一次 + 校验前缀 + 逐层 decodeURIComponent」，复测插件全流程 ok |
+| dhvideo.source（豆花电影网） | 1.0.0 → 1.0.1 | PoW 页要求 `sha1(hash+i)===target`，实测 i=24414 / 34799 均可解；但服务端在**首次成功**后才下发 `sion_id` Cookie，之后每个频道页都要带它。插件只重试 3 次，赶不上这个 cookie 往返 | 重试次数 3 → 5，并保留每次用最新挑战页求解；实测 `dianying.html?attack_key=<i>` 返回 200（109 KB 真实列表） |
+
+### 5.2 域名溯源结论（实测证据）
+
+对「站点不存在」逐个溯源，结论是有两类，不能一概当域名失效：
+
+**A 类：域名被停放/劫持（插件无法修复）**
+
+这些站点的人机校验页最终跳转是 `http://ww<随机>.域名/?tkn=…` 形式，属于域名停放页：
+
+| 站点 | 证据 |
+| --- | --- |
+| anfuns（anfuns.org） | `/map.html` 返回 MacCMS `ch=1&js=<JWT>&sid=…` 二次跳转页；带 token 与 sid Cookie 重放后 **302 → `http://ww547.anfuns.org/?tkn=…`**（停放页），根路径 401 `Forbidden` |
+| jdys（jdys.art） | 同上流程 → **302 → `http://ww19.jdys.art`**，落地页为 GDPR/广告停放模板 |
+| xiaohys（xiaohys.com） | 同上流程 → **302 → `http://ww547.xiaohys.com/?tkn=…`**；直连时 400。`anfunsapp.cn` 只是 App 下载页（夸克网盘），不是站点 |
+
+**B 类：域名仍然有效，是出口线路被站点拒绝**
+
+| 站点 | 证据 |
+| --- | --- |
+| kxyy.source / local.kxyy（开心影院） | 官方发布页 `kxyy.app`（标题「开心影院 - 官方最新网址发布页」）当前仍指向 `kxyy1.cc`；`www.kxyy1.cc` 全路径返回 726 字节宝塔 404 页 |
+| zhuiying.source（追影） | 6 个镜像（zhuiying1/2/3.cc 与 .com）全部同一张 726 字节宝塔 404 页 |
+
+判定：这类国内站点对境外出口 IP 会直接吐 404/401（宝塔默认页）。HGhub 走系统代理时同样受 Clash 规则影响，
+所以「换节点」比「换域名」更可能是解药：
+
+```
+# FlClash / Clash 规则里为这些域名指定直连（或国内节点）
+DOMAIN-SUFFIX,kxyy1.cc,DIRECT
+DOMAIN-SUFFIX,zhuiying1.cc,DIRECT
+DOMAIN-SUFFIX,zhuiying2.cc,DIRECT
+DOMAIN-SUFFIX,zhuiying3.cc,DIRECT
+DOMAIN-SUFFIX,zhuiying1.com,DIRECT
+DOMAIN-SUFFIX,zhuiying2.com,DIRECT
+DOMAIN-SUFFIX,zhuiying3.com,DIRECT
+```
+
+**C 类：服务端自身故障或强风控（时间敏感，非代码问题）**
+
+- `shdy2.com` → 522（Cloudflare 回源失败，源站离线）
+- `op.ysdqjs.cn` → 502（接口挂了）
+- `hanjukankan.com` → 请求超时
+- `aowu.tv` → TLS ECONNRESET
+- `hongkongdollvideo.com` → Cloudflare `Edge IP Restricted`（地区限制）
+- `duanjutt.tv` → 200 但响应体 0 字节
+- `dhvideo.cc` → 短时间大量请求后整站 429（需冷却，插件已带 40 秒 retryAfterSec）
+
+### 5.3 复测方式
+
+探测用的是按 HPP 规范自行实现的宿主模拟器（Node 24 + cheerio + undici，走系统代理）：
+对每个插件依次调用 `home` → `catalog` → `search` → `getDetail` → `resolvePlayback`，
+再对封面与播放地址发 `Range: bytes=0-1023` 实际取流。该工具仅本地使用，未随仓库发布。

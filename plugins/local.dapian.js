@@ -3,7 +3,7 @@
 export const meta = {
   id: 'local.dapian',
   name: '大片网',
-  version: '0.1.0',
+  version: '0.1.1',
   protocol: 1,
   author: 'HPP 实测',
   description: 'mxpro 模板点播源，两条播放线路，播放地址需 base64 + URL 解码',
@@ -136,22 +136,22 @@ export default function (hg) {
     };
   }
 
-  // 站点的 encrypt 字段：0 明文；2 = base64 后 URL 解码（多层）
+  // encrypt=2：先 base64 一次得到 URL 编码串，再逐层 URL 解码；
+  // 旧实现把解码结果又当 base64 解，导致拿到乱码后报「播放地址无效」
   function decodeUrl(raw, encrypt) {
-    let s = String(raw || '');
+    let s = String(raw || '').trim();
+    if (/^https?:\/\//i.test(s)) return s;
     if (encrypt === 2 || encrypt === 1) {
-      for (let i = 0; i < 3; i++) {
+      try {
+        const once = hg.codec.utf8Decode(hg.codec.base64Decode(s));
+        if (/^(%[0-9A-Fa-f]{2}|https?:\/\/)/.test(once)) s = once;
+      } catch { /* 不是 base64 就按明文处理 */ }
+      for (let i = 0; i < 4 && /%[0-9A-Fa-f]{2}/.test(s); i++) {
         try {
-          const bytes = hg.codec.base64Decode(s);
-          const next = hg.codec.utf8Decode(bytes);
-          if (!next || next === s) break;
+          const next = decodeURIComponent(s);
+          if (next === s) break;
           s = next;
         } catch { break; }
-      }
-      for (let i = 0; i < 4; i++) {
-        const next = decodeURIComponent(s);
-        if (next === s) break;
-        s = next;
       }
     }
     return s;

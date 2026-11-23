@@ -1,7 +1,7 @@
 export const meta = {
   id: 'dhvideo.source',
   name: '豆花电影网',
-  version: '1.0.0',
+  version: '1.0.1',
   protocol: 1,
   kind: 'source',
   description: '豆花电影网（dhvideo.cc）：五个频道分页、搜索、多线路详情；播放走 /api/m3u8 跳转到 HLS，遇 sha1 工作量校验时插件内自行求解。',
@@ -74,7 +74,8 @@ export default hg => {
     const opts = options || {};
     const url = path.startsWith('http') ? path : `${SITE}${path}`;
     let current = url;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // 首次解出 attack_key 后服务端才下发 sion_id Cookie，需要多一轮，3 次不够
+    for (let attempt = 0; attempt < 5; attempt++) {
       let res;
       try {
         res = await hg.http.fetch({
