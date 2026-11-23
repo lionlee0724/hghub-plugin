@@ -17,17 +17,17 @@
 
 | 源 | 域名 | 可用的替代路径 |
 | --- | --- | --- |
-| 米果 miguo | dmxq40.com | `/index.php/ajax/data?mid=1&tid=&page=N`；详情页 `player_aaaa` |
+| 米果 miguo | dmxq40.com | **已移植为 `miguo` 插件**（ajax/data 列表 + `/voddetail/<id>.html` 详情 + `/vodplay/<id>-<sid>-<nid>.html` 播放页 `player_aaaa`） |
 | 桃果 taoguo | lujj31.buzz | **已移植为 `taoguo` 插件**（ajax/data 列表 + 详情页 + 播放页 player_aaaa） |
-| 榴果 liuguo | www.llsp.me | 同上 |
+| 榴果 liuguo | www.llsp.me | 详情页 `/voddetail/<id>.html` 只回 66 字节 JS 跳转（要 cookie），暂未移植 |
 | 美果 meiguo | shiresm.lol | **已移植为 `meiguo` 插件**（同上模板） |
-| 柠果 ningguo | toptv15.cyou | 同上 |
-| 宵果 xiaoguo | yese.co | 同上 |
-| 樱果 yingguo | missav02.xyz | 同上 |
-| 露果 luguo | luyitian.com | 同上 |
-| 荔果 liguo | ririlu.cc | 同上 |
-| 芒果 mangguo | zsrqab03.zsrenqi.xyz | 同上 |
-| 艳果 yanguo | xqxq1.cc | 同上 |
+| 柠果 ningguo | toptv15.cyou | **已移植为 `ningguo` 插件**（标准模板，HLS 206） |
+| 宵果 xiaoguo | yese.co | 目前 `ajax/data` 返回 500（WAF），待重试 |
+| 樱果 yingguo | missav02.xyz | 目前 ECONNRESET，待重试 |
+| 露果 luguo | luyitian.com | 目前 `ajax/data` 返回 500，待重试 |
+| 荔果 liguo | ririlu.cc | 目前 `ajax/data` 返回 500，待重试 |
+| 芒果 mangguo | zsrqab03.zsrenqi.xyz | 播放页是 yexu 主题（`player_aaaa.url` 给的是站名），且 ajax 被 WAF 拦，未移植 |
+| 艳果 yanguo | xqxq1.cc | `ajax/data` 404，未移植 |
 | 花果 huaguo | www.zywest263.com | 403（Cloudflare 拦截机房 IP） |
 | 伍果 wuguo | www.duanju55.com | 403 |
 | 爽果 shuangguo | www.duanju2.com | 403 |

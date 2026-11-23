@@ -47,6 +47,8 @@ plugins/<插件ID>.js    单文件插件源码，ES 模块，meta.id/version 与
 | `youguo`（柚果） | 标准 MacCMS JSON 接口（`/api.php/provide/vod/`），21 个分类、分页列表、搜索、详情与 m3u8 直连。移植自 guoapp 的 `duanjuProviderCatalog`（Kind: maccms）。 |
 | `taoguo`（桃果） | `lujj31.buzz`。站点关掉了 `api.php`（返回 `closed`），改走 `/index.php/ajax/data` 列表 + 详情页分集 + 播放页 `player_aaaa` 取 m3u8；搜索用 `ajax/suggest`。 |
 | `meiguo`（美果） | `shiresm.lol`，与桃果同一套 MacCMS 模板（同一份代码换域名）。 |
+| `miguo`（米果） | `dmxq40.com`，同一套 MacCMS 模板；列表走 `ajax/data`，详情 `<title>` 取片名，播放页 `player_aaaa` 取 m3u8。 |
+| `ningguo`（柠果） | `toptv15.cyou`，同一套 MacCMS 模板，实测 HLS 206 可取流。 |
 
 guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移植 / 卡点）见 [`docs/guoapp-sources.md`](docs/guoapp-sources.md)。
 
