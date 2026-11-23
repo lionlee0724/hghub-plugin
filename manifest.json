@@ -24,13 +24,6 @@
       "url": "plugins/apple.js"
     },
     {
-      "id": "appmovie.source",
-      "name": "APP影院",
-      "version": "1.0.2",
-      "description": "APP影院（appmovie.art）：首页四个热映分区、八个频道分页、搜索、详情与多线路 m3u8 直连。",
-      "url": "plugins/appmovie.source.js"
-    },
-    {
       "id": "auete.source",
       "name": "Auete影视",
       "version": "1.0.0",
@@ -173,7 +166,7 @@
     {
       "id": "hhkan.source",
       "name": "好好看",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "description": "好好看（hhkan1.com）：首页分区、五个频道、关键词搜索、详情与多线路 HLS。站点用 cdndefend 的 JS 挑战挡爬虫，插件里把那道 SHA1 工作量证明直接算出来拿 cookie，全程不需要浏览器。",
       "url": "plugins/hhkan.source.js"
     },
@@ -225,13 +218,6 @@
       "version": "1.0.1",
       "description": "极速追剧（jisuzhuiju.com）：首页五个分区、五个频道分页、搜索、详情与多线路 HLS 直连。",
       "url": "plugins/jisu.source.js"
-    },
-    {
-      "id": "jpyy",
-      "name": "金牌影视",
-      "version": "1.0.1",
-      "description": "金牌影视匿名接口：分类、搜索、详情与播放。签名用 MD5+SHA1。",
-      "url": "plugins/jpyy.js"
     },
     {
       "id": "juzong.source",

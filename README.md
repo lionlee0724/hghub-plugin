@@ -76,7 +76,7 @@ guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移�
 | `hdmoli` | 1.0.2 → 2.0.0 | 站点已改网盘站，补搜索页 `.myui-vodlist__media` 与去重；播放为 `kind: external`（跳夸克/百度网盘） |
 | `avtoday` | 1.0.2 → **1.0.6** | 对方到 1.0.4；我方再修首页与分类（见下） |
 
-未动的：`apple`（我方 1.0.2 更新）、`huangguo`（我方 1.1.0 更新）、`jpyy`（同版本）。
+未动的：`apple`（我方 1.0.2 更新）、`huangguo`（我方 1.1.0 更新）。
 
 ### 二、新增成人源（14 个，全部实测到可取流）
 
@@ -125,5 +125,18 @@ guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移�
 | saohuo | shdy2.com | HTTP 522（Cloudflare 回源失败） |
 | tiantian | op.ysdqjs.cn | HTTP 502（接口停摆） |
 
-保留观察的：`hanime` / `hkdoll` / `jpyy`（403，疑似按出口 IP 拦截，换节点可再验证）、
+保留观察的：`hanime` / `hkdoll`（Cloudflare「Edge IP Restricted」，按出口 IP 段拦截——换其它出口实测 `200` 且 402 KB 正常首页，站点本身活着）、
 `avtoday` / `hdmoli` / `pornhub` / `xhamster` / `wwgz` / `hhkan.source`（部分功能可用）。
+
+## 已彻底删除（确认失效，不再保留源码）
+
+与上面「归档」不同，下面两个站点在**多个独立出口**复测都拿不到任何内容，源码已从仓库删除
+（需要时可用 `git show <commit>:plugins/<id>.js` 取回）。
+
+| 插件 | 站点 | 判定依据 |
+| --- | --- | --- |
+| `appmovie.source` | www.appmovie.art | 源站返回 `200` 但响应体恒为 0 字节（openresty 只发响应头、正文不传）。本机代理出口如此，Oracle VPS 用完整浏览器请求头复测同样如此；国内直连为 403。等同于站点侧已坏 |
+| `jpyy` | www.jiabaide.cn | 首页与 API 一律 307 → `/GE/CC/VALIDATOR` → 403 `The request has been blocked by cc policy`，且全程不下发 cookie。本机代理、国内直连、Oracle VPS 三个出口结果一致，插件侧无法通过 |
+
+> ⚠️ **从仓库删除不会卸载 App 里已装的那一份**。HGhub 订阅更新只做「同 ID 更高版本覆盖」，
+> 不会因为列表里没有就删掉本地插件。请在 App 的插件列表里手动移除 `appmovie.source` 与 `jpyy`。

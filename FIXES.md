@@ -395,3 +395,47 @@ VPS 的 hermes 容器里自带 `/opt/hermes/tools/chromium-1208/chrome-linux/chr
 - **站点侧限制/已坏，插件无解**：9 个（见 10.2）
 
 播放链路（`resolvePlayback` → 实际取流）本身没问题：只要站点给出可访问的地址，插件都能把 `stream.headers`（Referer/UA/Cookie）带对，实测取流统一返回 200 或 206。
+
+## 11. 清理失效插件：从仓库删除 `appmovie.source` 与 `jpyy`（订阅 62 → 60）
+
+2026-11-23 第二轮复测。上一轮把 9 个「失败」笼统记成「站点侧问题」，这次换成**多条目 × 多线路 + 多出口**复测，
+发现大部分只是被我的出口网络拖累，真正失效的只有下面 2 个。
+
+### 11.1 复测方法（避免再误判）
+
+改了 3 处判定口径，都是有代价换来的：
+
+1. **单条不过 ≠ 站点死**：`deep.mjs` 每站取 6 个条目、每条目试 2 集、遍历所有线路，只要有 1 条出流就算 ALIVE。
+2. **单出口不过 ≠ 站点死**：本机 FlClash 代理（海外）与 Oracle VPS（`150.230.33.91`）是两个独立出口，
+   再叠加本机直连（国内 ISP）。三处结果一致才敢下「失效」结论。
+3. **必须真的读到字节**：只看 `200` 不够。`appmovie` 就是「200 + 0 字节」，只看状态码会漏掉。
+
+### 11.2 逐个证据链
+
+| 插件 | 本机代理 | 国内直连 | Oracle VPS | 结论 |
+| --- | --- | --- | --- | --- |
+| `appmovie.source` | `UND_ERR_SOCKET` / 后期 `200` 但 0 字节 | 403 | `200` + **0 字节**（完整浏览器头也 0 字节） | 源站只发 openresty 响应头、正文不传 → **删除** |
+| `jpyy` | 307 → `/GE/CC/VALIDATOR` → 403 | 307 → 403 | 307 → 403 | WAF 三个出口全拒且不下发 cookie → **删除** |
+| `hkdoll` | 403 `Edge IP Restricted` | DNS 被污染成 `0.0.0.0` | **200 / 402 KB**，标题「麻豆玩偶姐姐」正常 | 站点活着，按出口 IP 段拦 → **保留** |
+| `91porn` | 200 | ECONNRESET | 200 | 站点活着，国内直连被 CF 拦 → **保留** |
+
+`hkdoll` 与 `91porn` 这组对比很关键：同样在本机打不开，换出口就能开，说明问题在出口 IP 而不在站点。
+按这个口径，`appmovie` 和 `jpyy` 是**换出口也拿不到内容**，才判失效。
+
+### 11.3 `hhkan.source` 1.0.4 → 1.0.5（顺手修的两个真 bug）
+
+复测里发现 1.0.4 还有个漏掉的坑：
+
+| 问题 | 根因 | 修法 |
+| --- | --- | --- |
+| 取流探测抛 `UPSTREAM_ERROR response too large`，把整条链路判死 | probe 带 `Range` 但 CDN 无视它、直接回整段视频，撞上 `maxBytes: 256KB`；而 catch 里 `instanceof hg.PluginError` 又原样抛出，绕过了换线路逻辑 | catch 里把 `response too large` 视为**成功**（能传数据即源通），才继续换线路 |
+| 首页 `/` 长期 850（cdndefend 死挡），首页空白 | 首页 `.fs-margin-section` 解析依赖那个被挡的页面 | 新增 `channelSections()` 兜底：首页取不到就用前 5 个频道的 `/channel/<tid>.html` 各拼一块 |
+| 详情页偶发 850（挑战偶发失败） | 850 重试只给 1 次 | 重试改成 2 次循环 |
+
+复测（6 条目 × 2 集）：`home=ok(5)`，`streamOk=3 fail=0`。详情仍有 2/6 撞 850，属站点守护的偶发拦截。
+
+### 11.4 必须手动做的收尾
+
+**删仓库 ≠ 卸载 App 里的插件。** `docs_developers_distribution.md` 写明订阅更新只做「同 ID 更高版本覆盖」，
+`docs_plugin-protocol_01-plugin-file.md:241` 的「移除插件时清除它的文件、存储、Cookie、缓存与设置」是**宿主**的动作。
+所以要在 HGhub App 的插件列表里手动移除 `appmovie.source` 和 `jpyy`，否则本地那份还在、还会继续报错。

@@ -1,7 +1,7 @@
 export const meta = {
   id: 'hhkan.source',
   name: '好好看',
-  version: '1.0.4',
+  version: '1.0.5',
   protocol: 1,
   kind: 'source',
   description: '好好看（hhkan1.com）：首页分区、五个频道、关键词搜索、详情与多线路 HLS。站点用 cdndefend 的 JS 挑战挡爬虫，插件里把那道 SHA1 工作量证明直接算出来拿 cookie，全程不需要浏览器。',
@@ -209,8 +209,8 @@ export default function (hg) {
     let cookie = await loadCookie(ctx);
     let res = await rawFetch(url, ctx, cookie, ttl);
 
-    // cookie 过期或被清掉时会重新回到 850，解一次再试。
-    if (res.status === 850) {
+    // cookie 过期或被清掉时会重新回到 850，重新解一次再试；挑战偶发失败，多给一轮。
+    for (let attempt = 0; res.status === 850 && attempt < 2; attempt += 1) {
       cookieCache = null;
       try {
         await hg.storage.delete(COOKIE_KEY);
@@ -361,16 +361,43 @@ export default function (hg) {
       if (!probe.ok || !okBody) throw new hg.PluginError('CONTENT_LOCKED', `这条线路取流失败（${probe.status}）`);
     } catch (error) {
       if (error && error.code === 'CANCELLED') throw error;
+      // CDN 无视 Range 头、直接回整段视频时会撞上宿主的大小上限，
+      // 这恰恰说明源是通的，按成功处理，别把它当成这条线路坏掉。
+      if (error instanceof hg.PluginError && /response too large/i.test(String(error.message))) return stream;
       if (error instanceof hg.PluginError) throw error;
       throw new hg.PluginError('CONTENT_LOCKED', '这条线路连不上');
     }
     return stream;
   }
 
+  // 首页拿不到时的兜底：拿前几个频道的首页各自当一块。
+  async function channelSections(ctx) {
+    const out = [];
+    for (const c of CATS.slice(0, 5)) {
+      try {
+        const doc = await fetchDoc(`/channel/${c.id}.html`, ctx, 300);
+        const items = cardsOf(doc, CAT_TYPE.get(c.id) || 'other');
+        if (items.length) out.push({ id: `s${out.length}`, title: c.label, layout: out.length === 0 ? 'row' : 'grid', items: items.slice(0, 24) });
+      } catch (error) {
+        if (error && error.code === 'CANCELLED') throw error;
+      }
+    }
+    if (!out.length) throw new hg.PluginError('UPSTREAM_ERROR', '站点首页与频道都取不到');
+    return out;
+  }
+
   return {
     home: {
       async getSections(params, ctx) {
-        const doc = await fetchDoc('/', ctx, 900);
+        let doc;
+        try {
+          doc = await fetchDoc('/', ctx, 600);
+        } catch (error) {
+          if (error && error.code === 'CANCELLED') throw error;
+          // 首页偶尔会被 cdndefend 死挡（850），退回用各频道首页拼一个首页。
+          doc = null;
+        }
+        if (!doc) return { items: await channelSections(ctx), next: null };
         const sections = [];
         const seen = new Set();
 
