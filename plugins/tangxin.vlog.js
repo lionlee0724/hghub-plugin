@@ -1,7 +1,7 @@
 export const meta = {
   id: 'tangxin.vlog',
   name: '糖心Vlog',
-  version: '1.0.1',
+  version: '1.0.2',
   protocol: 1,
   kind: 'source',
   description: '糖心Vlog 站点数据源：首页分区、演员与标签、全量索引搜索、m3u8 直连播放。',
@@ -221,7 +221,13 @@ export default hg => {
       },
 
       async list(params, ctx) {
-        const raw = norm(params.categoryId);
+        let raw = norm(params.categoryId);
+        // 宿主可能把分组节点（authors / tags）当分类传进来：落到它的第一个子项
+        if ((raw === 'authors' || raw === 'tags') && typeof this.getCategories === 'function') {
+          const groups = await this.getCategories(params, ctx);
+          const grp = (groups || []).find((g) => g && g.id === raw);
+          if (grp && Array.isArray(grp.children) && grp.children.length) raw = grp.children[0].id;
+        }
         const sep = raw.indexOf(':');
         if (sep < 1) throw new hg.PluginError('INVALID_ARGUMENT', '分类 ID 不合法');
         const kind = raw.slice(0, sep);

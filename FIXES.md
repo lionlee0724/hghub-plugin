@@ -345,3 +345,53 @@ VPS 的 hermes 容器里自带 `/opt/hermes/tools/chromium-1208/chrome-linux/chr
 才拿到 `access` / `playback` 这两个只在点击播放时才发的请求。
 年龄门（`age-gate-open`）不影响：直接导航 `/watch/<id>/<集号>/` 即可，播放要过人机验证时点一次播放器遮罩。
 所有临时脚本、51MB netlog、chromium profile 已清理。
+
+## 10. 全量巡检（62 个插件 × home→list→search→detail→playback→stream）
+
+2026-11-23 用宿主模拟器逐个跑完整链路，每个插件都实际 GET 一次流地址（Range 取 1KB）确认能出数据，不只看接口返回。
+
+### 10.1 本轮修掉的两个真 bug
+
+| 插件 | 版本 | 问题 | 修法 |
+| --- | --- | --- | --- |
+| `tangxin.vlog` | 1.0.1 → **1.0.2** | `getCategories` 返回的是分组节点（`authors` / `tags`），宿主把分组 ID 当分类传给 `list` 时抛 `INVALID_ARGUMENT 分类 ID 不合法` | `list` 识别分组 ID，自动落到它的第一个子项（`a:<演员名>`）再查询 |
+| `hhkan.source` | 1.0.3 → **1.0.4** | ① 播放页超过宿主默认 2MB 上限，报 `response too large`；② 取流探测超时只给 6s，慢 CDN 被误判成死链 | ① `rawFetch` 显式 `maxBytes: 8MB`；② probe `timeoutMs` 6s → 15s |
+
+`hhkan.source` 修完复测：13 条线路里取前 3 条，**全部 OK**（hn.bfvvs.com / play.hhuus.com）。
+
+### 10.2 判定为「站点侧问题」（插件层无解）
+
+| 插件 | 现象 | 结论 |
+| --- | --- | --- |
+| `hkdoll` | 全站 403 | 站点按出口 IP 拦 |
+| `jpyy` | 接口返回 HTML 页面而不是 JSON | 站点 API 已坏 |
+| `auete.source` | 只有 1 条线路，取流失败 | 站点按地区限制 |
+| `dhvideo.source` | 只有 1 条线路，403 | 人机校验/防盗链 |
+| `jisu.source` | ECONNRESET | 站点不稳 |
+| `local.kanmovie` | CDN `v5.ppqrrs.com` 403（无头 / 仅 UA / 带站点 Referer / 带自身 Referer 全试过） | 源站需签名，插件无法补 |
+| `appmovie.source` | `UND_ERR_SOCKET` | 站点侧连接被断 |
+| `heiliao.source` | 「这条是图文爆料，没有可播放的视频」 | 图文站，设计内行为 |
+| `hhkan.source` | home 返回 850（cdndefend 挑战） | 站点 cookie 挑战时紧时松；`list/detail/play` 均可用 |
+
+### 10.3 首页慢 ≠ 坏了（重要）
+
+巡检里首页超时的这 5 个，放宽到 120s 单独复测全是**正常**的，只是慢：
+
+| 插件 | 首页耗时 | 结果 |
+| --- | --- | --- |
+| `miguo` | 15s | 最新:10, 电影:10, 电视剧:10 |
+| `hlws.source` | 10s | 5 个分区各 30 条 |
+| `chengguo.source` | 9s | 6 个分区 23–30 条 |
+| `local.ppnix` | 2s | Featured:40 |
+| `local.cxkjg` | 1s | 最新更新:20 |
+
+巡检脚本初版把单步超时设成 22s，这些站因为「首页慢 + 插件内部多次重试」被误报成失败。实际使用时宿主给的时间更宽，能正常出内容。
+
+### 10.4 结论
+
+62 个插件里：
+
+- **全链路通（含取流 200/206）**：53 个
+- **站点侧限制/已坏，插件无解**：9 个（见 10.2）
+
+播放链路（`resolvePlayback` → 实际取流）本身没问题：只要站点给出可访问的地址，插件都能把 `stream.headers`（Referer/UA/Cookie）带对，实测取流统一返回 200 或 206。

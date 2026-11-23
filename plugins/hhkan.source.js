@@ -1,7 +1,7 @@
 export const meta = {
   id: 'hhkan.source',
   name: '好好看',
-  version: '1.0.3',
+  version: '1.0.4',
   protocol: 1,
   kind: 'source',
   description: '好好看（hhkan1.com）：首页分区、五个频道、关键词搜索、详情与多线路 HLS。站点用 cdndefend 的 JS 挑战挡爬虫，插件里把那道 SHA1 工作量证明直接算出来拿 cookie，全程不需要浏览器。',
@@ -186,6 +186,8 @@ export default function (hg) {
     return cookieCache;
   }
 
+  const MAX_BYTES = 8 * 1024 * 1024;   // 播放页含整季剧集列表，实测超 2MB，宿主默认上限不够
+
   async function rawFetch(url, ctx, cookie, ttl) {
     return hg.http.fetch({
       url,
@@ -196,6 +198,7 @@ export default function (hg) {
         ...(cookie ? { Cookie: cookie } : {}),
       },
       retry: 0,
+      maxBytes: MAX_BYTES,
       signal: ctx.signal,
       ...(ttl ? { cache: { ttlSec: ttl, staleIfErrorSec: 3600 } } : {}),
     });
@@ -348,7 +351,7 @@ export default function (hg) {
         url: stream.url,
         responseType: 'text',
         headers: { 'User-Agent': UA, Range: 'bytes=0-2047' },
-        timeoutMs: 6000,
+        timeoutMs: 15000,
         maxBytes: 256 * 1024,
         retry: 0,
         signal: ctx.signal,
