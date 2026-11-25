@@ -206,6 +206,13 @@
       "url": "plugins/huangguo.source.js"
     },
     {
+      "id": "huangpp",
+      "name": "黄泡泡",
+      "version": "0.1.0",
+      "description": "黄泡泡（huangpp.com）：二次元里番/同人/3D 动画影集。游客即可拿到每部作品完整的 HLS 播放地址（站点自行签发 CDN 票据），不需要登录、不消耗金币，一部作品就是一个完整视频。首页分区、分类翻页、关键词搜索齐备。",
+      "url": "plugins/huangpp.js"
+    },
+    {
       "id": "j18",
       "name": "18J.TV",
       "version": "1.0.1",
