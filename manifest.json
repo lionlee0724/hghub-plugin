@@ -206,6 +206,13 @@
       "url": "plugins/huangguo.source.js"
     },
     {
+      "id": "huangguoac",
+      "name": "黄果漫剧",
+      "version": "0.1.0",
+      "description": "黄果漫剧（huangguoac.net 为官方地址发布页，内容在 huangguoac.com 及其镜像）：AI 成人短剧、里番动漫、日漫、韩漫。每集页面的 SSR 里直接内嵌带签名的 HLS 地址，游客即可播放，不用登录也不消耗金币，一部作品的全部集数都能直接看。",
+      "url": "plugins/huangguoac.js"
+    },
+    {
       "id": "huangpp",
       "name": "黄泡泡",
       "version": "0.1.0",

@@ -97,6 +97,7 @@ guoapp 全量站源对照（26 个「果」源 + 黄果系，逐个标注已移�
 | `xx9` | 主播视频 | xx9.com | 14 个首页分区，stream 206 hls |
 | `rou` | Rou Video（肉視頻） | rou.video | 流被包在 PNG 自定义块里，插件自带解包，stream 206 hls |
 | `gscenes` | 基色短剧 GScenes（BL/真人/AI） | www.x4bny.cc | 792 部作品、34 个分类；自建 REST API（`/api/v1/*`）走游客 JWT；前 1–2 集官方免费试看，VIP 集返回 `CONTENT_LOCKED`；HLS 取流需带上 playback 下发的 CloudFront 签名 cookie |
+| `huangguoac` | 黄果漫剧（`huangguoac.net` 是地址发布页，内容在 `huangguoac.com` 及镜像 `ctvr2/vt8f/i5g1.zeemeodb.cc`） | 每集页面 SSR 直接内嵌带签名的 HLS（`yd-oetd-hls.tjyyjk.cn`），游客即可播放**全部集数**、不花金币；3 个视频分类（成人短剧/AI漫剧/里番动漫）。`riman`/`hanman` 是漫画（`/comic/`），无视频流，不收 |
 
 试过但没入订阅：`haijiao`（海角，播放要登录，`AUTH_REQUIRED`）、`hkdoll`（站点 403，保留观察）。
 
