@@ -555,7 +555,7 @@ VPS 的 hermes 容器里自带 `/opt/hermes/tools/chromium-1208/chrome-linux/chr
 
 ### 14.1 Bug 2：`index` 从 0 开始，宿主丢掉首项
 
-规范 [05 §7](docs/plugin-protocol/05-content-model.md) 写得很死：
+规范 [05 §7](https://github.com/Minireel/HGhub/blob/main/docs/plugin-protocol/05-content-model.md) 写得很死：
 
 ```ts
 index: number;   // 从 1 开始的正整数；同一 Playlist 内唯一的列表排序序号
