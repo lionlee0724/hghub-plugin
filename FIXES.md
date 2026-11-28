@@ -545,3 +545,122 @@ VPS 的 hermes 容器里自带 `/opt/hermes/tools/chromium-1208/chrome-linux/chr
 分页这边还有个坑：`10303` / `10304` 翻到第 51 页仍返回 16 条（不是末页），
 `10301` 第 51 页才报错。所以「满页就还有下一页」的推断在这两个分类上会多翻几页空数据，
 不影响使用，但别据此判断总页数。
+
+---
+
+## 14. 修用户反馈的两个 bug：缩略图不显示 + 首集缺失（`huangpp` 0.2.0 / `huangguoac` 0.1.1）
+
+2026-11-24 用户反馈：**① 缩略图不能正常显示（其它站点正常）；② 进入详情后第一集没有，都从第二集开始。**
+两个站都有这两个 bug，根因互不相同。
+
+### 14.1 Bug 2：`index` 从 0 开始，宿主丢掉首项
+
+规范 [05 §7](docs/plugin-protocol/05-content-model.md) 写得很死：
+
+```ts
+index: number;   // 从 1 开始的正整数；同一 Playlist 内唯一的列表排序序号
+```
+
+旧代码两处都用了 0 起始：
+
+```js
+// huangguoac 旧
+episodes: d.episodes.map((n, i) => ({ id: String(n), index: i, ... }))
+// huangpp 旧
+episodes: [{ id: '1', index: 0, episodeNumber: 1, label: '全集' }]
+```
+
+宿主把 `index=0` 当成无效序号丢弃，于是「第 1 集」永远不出现，看起来就像从第 2 集开始。
+改成 `index: i + 1` 后，`huangguoac` 的 4 集 / 11 集、`huangpp` 的 2 集全部正确。
+
+### 14.2 顺带查出 `huangpp` 更严重的缺集：多集作品被压成 1 集
+
+修 Bug 2 时对 40 部作品做全量审计，发现 `huangpp` **39/40 部其实是多集作品**，
+但旧代码一律写成 `episodes: [{ id: '1', ... }]` —— 每部只能看到「全集」一项，后面的集全丢了。
+
+真正的分集来源是播放页 SSR 里 `data.video.collectionMembers` 数组（`episodeCount` 只是数字）：
+
+```json
+"collectionMembers":[
+  {"id":24786,"title":"纯纯公主的唇唇 1","sort":20,"videoTime":975},
+  {"id":24787,"title":"纯纯公主的唇唇 2","sort":10,"videoTime":974}
+]
+```
+
+要点：
+
+- **数组顺序就是显示顺序**（第 1 集在前）。`sort` 是**倒序**权重（第 1 集 20、第 2 集 10），
+  不要拿它排升序，否则会把顺序翻过来。
+- 每个成员是**独立的视频 id**，有自己的一页 `/series/watch/<成员 id>/`，
+  该页 `data.video.video.url` 才是这一集的流。合集页只给「当前选中集」的流。
+- `video.url` 里的 `?id=` 是视频 id（等于成员 id），不是合集 id。
+- 有的合集是从中间截的，标题写「4」「6」「7」，所以 `label` 用标题末尾的数字，
+  而 `index` 仍然从 1 连续排。
+
+实测同一部作品的各集流确实不同（不是同一文件多集引用）：
+
+```
+24790 第1集 98 分片 / 976.0s  首分片 fe455b1a8489
+24790 第2集 97 分片 / 975.0s  首分片 b3f30ec0d53b
+```
+
+### 14.3 Bug 1：封面在 CDN 上是加密的
+
+两个站的封面 `content-type` 都退化成 `application/octet-stream` / `binary/octet-stream`，
+magic 不是 `ffd8ff`，宿主按二进制处理 → 渲染不出来。两个站算法完全不同：
+
+| 站点 | 封面主机 | 算法 | 参数 |
+| --- | --- | --- | --- |
+| `huangpp` | `webimg.rlkfus.cn` | **只异或前 100 字节** | key `2019ysapp7527`（**13 字节** ASCII） |
+| `huangguoac` | `pic.qnlycc.cn` | **AES-128-CBC + PKCS7** | key `f5d965df75336270` / iv `97b60394abc2fbe1`（ASCII） |
+
+`huangpp` 的 key 长度是踩过的坑：站点源码是
+`i=new TextEncoder().encode("2019ysapp7527")`、`t[e]^=i[e%i.length]`，
+**13 字节**循环。若误以为是 12 字节（`2019ysapp752`），前 12 字节仍然对得上，
+但第 13 字节起全部错位，表现为「文件头看着像 JPEG、SOF/SOS/EOI 全不对」。
+
+实现选择按规范来：
+
+- `huangguoac` 用**宿主原生** `{ type: 'aes-cbc', key, iv, padding: 'pkcs7' }`（key/iv 传 Base64），
+  不占插件运行时。**`padding` 必须写 `pkcs7`**：写 `none` 时解出的 JPEG 尾部会残留
+  `08080808` 这样的填充字节，宿主可能因此判定图片不完整。
+- `huangpp` 是异或，宿主没有对应原生变换，只能走 `{ type: 'plugin', name: 'hpp-image' }`
+  并在 `transformResource` 里做纯计算还原（规范 [06 §16] 要求不联网）。
+  函数先判 magic：**已经是合法图片就原样返回**，避免对未加密的图二次破坏。
+
+另外 `huangpp` 的封面并不全是 JPEG —— 实测 25 张里 19 张 JPEG、6 张 PNG，
+所以 `contentType` 要按 magic 判断，不能一律写 `image/jpeg`。
+
+### 14.4 还有一类「列表页取不到封面」
+
+全量扫 204 张 `huangpp` 封面时有 3 张取不到地址。原因不是解密失败，而是这类卡片的封面
+被抽成了独立的 flight 区块，卡片位置上只剩 `$L` 组件引用：
+
+```
+卡片处：  "className":"hpp-series-card-cover","children":["$L4c","$L4d","$L4e",false,"$L4f"]
+别处：    4c:["$","$L4b",null,{"src":"https://webimg.rlkfus.cn/...png","alt":"<标题>"}]
+```
+
+按 `alt == 标题`（要去掉 `aria-label` 的「观看」前缀）回查前缀 400 字符内的最后一个 `src` 即可。
+修完 204/204 全部可渲染。
+
+### 14.5 验证结果
+
+| 检查项 | `huangpp` 0.2.0 | `huangguoac` 0.1.1 |
+| --- | --- | --- |
+| 分类翻页 + 搜索封面可渲染 | **204/204** | **427/427** |
+| 40 部分集序号（从 1 开始 / 连续 / 唯一） | **40/40** | **40/40** |
+| 多集作品逐集取流 | 2/2、3/3 全出流，各集首分片不同 | 4/4、11/11 全出流，各集首分片不同 |
+
+封面「可渲染」的判据是严格结构校验：JPEG 要同时满足 SOI `ffd8` + 出现 SOS `ffda` + 以 EOI `ffd9` 结尾，
+PNG/WebP/GIF 按各自 magic，不接受「解出来长度对」这种弱判据。
+
+### 14.6 给下次的教训
+
+- **`index` 永远从 1 开始**。这是最容易犯、也最容易漏测的错：写 0 不报错，
+  只是首项静默消失，看起来像「站点少给了一集」。
+- 见到 `episodeCount` 这类字段**不要当装饰**。`huangpp` 的 `episodeCount` 一直是对的（=2/3/4/12），
+  错的是插件根本没去读分集数组。数量字段与实际数组不一致时，先怀疑自己解析漏了。
+- 封面不显示先查三件事：`content-type` 是否退化、文件头 magic 是否合法、`transform` 参数
+  （尤其 key 的**字节长度**和 `padding`）是否与站点一致。
+- 加密封面优先用宿主原生 `aes-cbc`；只有非标准算法（异或之类）才写 `transformResource`。

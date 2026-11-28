@@ -208,15 +208,15 @@
     {
       "id": "huangguoac",
       "name": "黄果漫剧",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "黄果漫剧（huangguoac.net 为官方地址发布页，内容在 huangguoac.com 及其镜像）：AI 成人短剧、里番动漫、日漫、韩漫。每集页面的 SSR 里直接内嵌带签名的 HLS 地址，游客即可播放，不用登录也不消耗金币，一部作品的全部集数都能直接看。",
       "url": "plugins/huangguoac.js"
     },
     {
       "id": "huangpp",
       "name": "黄泡泡",
-      "version": "0.1.1",
-      "description": "黄泡泡（huangpaopao.club）：二次元里番/同人/3D 动画影集。游客即可拿到每部作品完整的 HLS 播放地址（站点自行签发 CDN 票据），不需要登录、不消耗金币，一部作品就是一个完整视频。首页分区、分类翻页、关键词搜索齐备。注意：短剧（/drama/）第 2 集起要金币，插件只收影集。",
+      "version": "0.2.0",
+      "description": "黄泡泡（huangpaopao.club）：二次元里番/同人/3D 动画。游客即可拿到每部作品完整的 HLS 播放地址（站点自行签发 CDN 票据），不需要登录、不消耗金币；合集型作品按站点的 collectionMembers 还原全部集数。首页分区、分类翻页、关键词搜索齐备。注意：短剧（/drama/）第 2 集起要金币，插件只收影集。",
       "url": "plugins/huangpp.js"
     },
     {

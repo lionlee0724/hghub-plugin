@@ -1,7 +1,7 @@
 export const meta = {
   id: 'huangguoac',
   name: '黄果漫剧',
-  version: '0.1.0',
+  version: '0.1.1',
   protocol: 1,
   kind: 'source',
   description: '黄果漫剧（huangguoac.net 为官方地址发布页，内容在 huangguoac.com 及其镜像）：AI 成人短剧、里番动漫、日漫、韩漫。每集页面的 SSR 里直接内嵌带签名的 HLS 地址，游客即可播放，不用登录也不消耗金币，一部作品的全部集数都能直接看。',
@@ -27,6 +27,37 @@ export default function (hg) {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
   const MAX_BYTES = 4 * 1024 * 1024;
+  // 封面图在 CDN 上是 AES-128-CBC 加密的（content-type 退化成 octet-stream），
+  // 用宿主原生 aes-cbc 还原，不占插件运行时。
+  const IMG_KEY_ASCII = 'f5d965df75336270';
+  const IMG_IV_ASCII = '97b60394abc2fbe1';
+
+  function isImageHost(host) {
+    const h = String(host || '').toLowerCase();
+    return h.indexOf('pic.') === 0;
+  }
+
+  function imgRef(url) {
+    const u = String(url || '').trim();
+    if (!u) return '';
+    const abs = u.replace(/^http:\/\//i, 'https://');
+    let host = '';
+    try {
+      host = new URL(abs).hostname;
+    } catch {
+      return abs;
+    }
+    if (!isImageHost(host)) return abs;
+    return {
+      url: abs,
+      transform: {
+        type: 'aes-cbc',
+        key: hg.codec.base64Encode(IMG_KEY_ASCII),
+        iv: hg.codec.base64Encode(IMG_IV_ASCII),
+        padding: 'pkcs7',
+      },
+    };
+  }
 
   const CATS = [
     { id: 'duanju', label: '成人短剧' },
@@ -117,7 +148,7 @@ export default function (hg) {
       out.push({
         id: m[1],
         title: String(m[3] || '').replace(/\s+/g, ' ').trim(),
-        cover: String(m[2] || '').replace(/^http:\/\//i, 'https://'),
+        cover: imgRef(m[2]),
       });
     }
     return out.filter((x) => x.title);
@@ -202,7 +233,7 @@ export default function (hg) {
     return {
       id: String(id),
       title: title || `作品 ${id}`,
-      cover: String(cover).replace(/^http:\/\//i, 'https://'),
+      cover: imgRef(cover),
       description: String(desc).replace(/\\n/g, ' ').slice(0, 400),
       tags: tags.slice(0, 8),
       episodes: eps.length ? eps : [1],
@@ -320,7 +351,7 @@ export default function (hg) {
               kind: 'main',
               episodes: d.episodes.map((n, i) => ({
                 id: String(n),
-                index: i,
+                index: i + 1,
                 episodeNumber: n,
                 label: `第${n}集`,
               })),
