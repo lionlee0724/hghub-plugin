@@ -1,12 +1,12 @@
 export const meta = {
   id: 'huangpp',
   name: '黄泡泡',
-  version: '0.1.0',
+  version: '0.1.1',
   protocol: 1,
   kind: 'source',
-  description: '黄泡泡（huangpp.com）：二次元里番/同人/3D 动画影集。游客即可拿到每部作品完整的 HLS 播放地址（站点自行签发 CDN 票据），不需要登录、不消耗金币，一部作品就是一个完整视频。首页分区、分类翻页、关键词搜索齐备。',
+  description: '黄泡泡（huangpaopao.club）：二次元里番/同人/3D 动画影集。游客即可拿到每部作品完整的 HLS 播放地址（站点自行签发 CDN 票据），不需要登录、不消耗金币，一部作品就是一个完整视频。首页分区、分类翻页、关键词搜索齐备。注意：短剧（/drama/）第 2 集起要金币，插件只收影集。',
   mature: true,
-  linkDomains: ['huangpp.com', 'www.huangpp.com'],
+  linkDomains: ['huangpaopao.club', 'huangpp.com', 'huangpp1.com', 'huangpp2.com', 'huangpp3.com'],
   defaultHeaders: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   },
@@ -14,7 +14,8 @@ export const meta = {
 };
 
 export default function (hg) {
-  const SITE = 'https://huangpp.com';
+  // 内容站在 huangpaopao.club；huangpp.com 与 huangpp1/2/3.com 已改成导航/品牌页，全部内容路径 404。
+  const SITE = 'https://huangpaopao.club';
   const UA =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
@@ -28,7 +29,7 @@ export default function (hg) {
     { id: '10304', label: '3D动画' },
   ];
 
-  const WATCH_RE = /^https?:\/\/(?:www\.)?huangpp\.com\/series\/watch\/(\d+)\/?(?:\?.*)?$/i;
+  const WATCH_RE = /^https?:\/\/(?:[a-z0-9-]+\.)*(?:huangpaopao\.club|huangpp\d?\.com)\/series\/watch\/(\d+)\/?(?:\?.*)?$/i;
 
   function textOf(res) {
     const d = res && res.data;
